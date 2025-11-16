@@ -7,7 +7,7 @@ export let SECTION_ORDER = [];
 
 /** Load danh sách file từ texts/index.json */
 export async function loadPlaylist() {
-    const resp = await fetch("/texts/index.json");
+    const resp = await fetch("texts/index.json");
     PLAYLIST = await resp.json();
 
     DOM.playlistSelect.innerHTML = PLAYLIST.map(f => {
@@ -18,7 +18,7 @@ export async function loadPlaylist() {
 
 /** Khi chọn playlist → load file txt */
 export async function loadInputTextFromFile(filename) {
-    const raw = await (await fetch(`/texts/${filename}`)).text();
+    const raw = await (await fetch(`texts/${filename}`)).text();
 
     TEXT_SECTIONS = {};
     SECTION_ORDER = [];
