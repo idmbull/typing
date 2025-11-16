@@ -153,14 +153,14 @@ h1 {
     font-size: 1.1rem;
     transition: transform 0.3s ease;
     min-height: 100px;
-    font-family: "Comfortaa", sans-serif;
+    font-family: "JetBrains Mono", monospace;
 }
 
 .text-display span {
     transition: all 0.2s;
     white-space: pre-wrap;
     word-wrap: break-word;
-    font-family: "Comfortaa", sans-serif;
+    font-family: "JetBrains Mono", monospace;
 }
 
 /* ----- Scroll ----- */

@@ -68,3 +68,25 @@ export function displayText(rawText) {
         });
     });
 }
+
+export function scrollToCaret() {
+    const caret = document.querySelector(".char.current");
+    const container = document.querySelector("#text-display");
+
+    if (!caret || !container) return;
+
+    const caretRect = caret.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    // Vị trí lý tưởng: caret nằm giữa container
+    const idealY = containerRect.top + containerRect.height / 2;
+
+    // Độ lệch cần cuộn
+    const delta = caretRect.top - idealY;
+
+    // Cuộn mượt – tránh giật
+    container.scrollBy({
+        top: delta,
+        behavior: "smooth"
+    });
+}

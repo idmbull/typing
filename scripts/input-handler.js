@@ -4,6 +4,7 @@ import { setClasses, isOutOfView } from "./utils.js";
 import { showTooltipForSpan } from "./tooltip.js";
 import { playClick, checkNewWordAndSpeak } from "./audio.js";
 import { scheduleStatsUpdate } from "./stats.js";
+import { scrollToCaret } from "./renderer.js";
 
 let pendingScroll = false;
 
@@ -36,9 +37,8 @@ function moveCursorTo(index) {
     if (current) current.classList.add("current");
 }
 
-
 /* ---------------------------------------------------------
-    SCROLL LOGIC (hiệu năng cao với throttle)
+   SCROLL LOGIC — kiểu Kindle (micro-scroll, cực nhẹ)
    --------------------------------------------------------- */
 
 function throttleScrollToCurrent() {
@@ -53,23 +53,38 @@ function throttleScrollToCurrent() {
         if (!span) return;
 
         const container = DOM.textContainer;
-        const wrapper = span.closest(".tooltip-word");
-        const targetEl = wrapper || span;
 
-        const rectTop = targetEl.offsetTop;
-        const rectHeight = targetEl.offsetHeight;
+        const caretRect = span.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
 
-        const lineHeight =
-            parseFloat(getComputedStyle(DOM.textDisplay).lineHeight) || 20;
+        const caretY = caretRect.top - containerRect.top;
 
-        const buffer = lineHeight * 2;
+        // Kindle không đưa caret về giữa — chỉ giữ nó khỏi mép dưới
+        const safeZoneTop = containerRect.height * 0.15;   // vùng an toàn trên
+        const safeZoneBot = containerRect.height * 0.50;   // vùng an toàn dưới
 
-        if (isOutOfView(rectTop, rectHeight, container, buffer)) {
-            container.scrollTop = Math.max(
-                0,
-                rectTop - container.clientHeight * 0.33
-            );
+        let delta = 0;
+
+        if (caretY < safeZoneTop) {
+            // Caret gần mép trên → cuộn nhẹ xuống
+            delta = caretY - safeZoneTop;
         }
+        else if (caretY > safeZoneBot) {
+            // Caret gần mép dưới → cuộn nhẹ lên
+            delta = caretY - safeZoneBot;
+        }
+
+        // Không cuộn nếu caret đang trong vùng an toàn
+        if (delta === 0) return;
+
+        // ⭐ Độ “nhẹ” kiểu Kindle — 20% lực cuộn
+        delta = delta * 0.15;
+
+        // ⭐ Nếu lệch quá ít (< 8px), bỏ qua để tránh rung
+        if (Math.abs(delta) < 8) return;
+
+        // ⭐ Cuộn tức thì, không smooth (vì smooth gây "floaty" → mệt mắt)
+        container.scrollTop += delta;
     });
 }
 
@@ -92,8 +107,8 @@ function checkCompletion(currentText) {
             const accuracy =
                 STATE.statTotalKeys > 0
                     ? Math.floor(
-                          (STATE.statCorrectKeys / STATE.statTotalKeys) * 100
-                      )
+                        (STATE.statCorrectKeys / STATE.statTotalKeys) * 100
+                    )
                     : 100;
 
             alert(`Chúc mừng! Bạn đã hoàn thành bài tập với độ chính xác ${accuracy}%`);
