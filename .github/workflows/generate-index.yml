@@ -18,7 +18,8 @@ jobs:
         run: |
           echo "[" > texts/index.json
           
-          files=$(ls texts/*.txt | sed 's/texts\///')
+          # Lấy tất cả .txt và .md
+          files=$(ls texts/*.{txt,md} 2>/dev/null | sed 's/texts\///')
           count=$(echo "$files" | wc -l)
           i=1
           
