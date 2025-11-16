@@ -16,21 +16,27 @@ jobs:
 
       - name: Generate index.json
         run: |
+          mkdir -p texts
           echo "[" > texts/index.json
-          
-          # Lấy tất cả .txt và .md
-          files=$(ls texts/*.{txt,md} 2>/dev/null | sed 's/texts\///')
-          count=$(echo "$files" | wc -l)
-          i=1
-          
-          for file in $files; do
-            echo "  \"${file}\"" >> texts/index.json
-            if [ $i -lt $count ]; then
-              echo "," >> texts/index.json
+
+          first=true
+
+          # Lấy các file .txt và .md (sort theo tên), xử lý tên có khoảng trắng
+          while IFS= read -r -d '' file; do
+            name="${file#texts/}"
+
+            # encode thành JSON string hợp lệ (escape khoảng trắng, quote, unicode…)
+            esc=$(printf '%s' "$name" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n")))')
+
+            if [ "$first" = true ]; then
+              printf '  %s\n' "$esc" >> texts/index.json
+              first=false
+            else
+              printf ',\n  %s\n' "$esc" >> texts/index.json
             fi
-            i=$((i+1))
-          done
-          
+
+          done < <(find texts -maxdepth 1 -type f \( -iname "*.txt" -o -iname "*.md" \) -print0 | sort -z)
+
           echo "]" >> texts/index.json
 
       - name: Commit changes
@@ -38,5 +44,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add texts/index.json
-          git commit -m "Auto update index.json" || echo "No changes"
+          git commit -m "Auto update index.json" || echo "No changes to commit"
           git push
