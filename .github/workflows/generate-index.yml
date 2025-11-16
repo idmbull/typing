@@ -21,11 +21,11 @@ jobs:
 
           first=true
 
-          # Lấy các file .txt và .md (sort theo tên), xử lý tên có khoảng trắng
+          # Lấy file txt và md, LOẠI file rác, LOẠI index.json
           while IFS= read -r -d '' file; do
             name="${file#texts/}"
 
-            # encode thành JSON string hợp lệ (escape khoảng trắng, quote, unicode…)
+            # encode JSON string an toàn
             esc=$(printf '%s' "$name" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n")))')
 
             if [ "$first" = true ]; then
@@ -35,7 +35,16 @@ jobs:
               printf ',\n  %s\n' "$esc" >> texts/index.json
             fi
 
-          done < <(find texts -maxdepth 1 -type f \( -iname "*.txt" -o -iname "*.md" \) -print0 | sort -z)
+          done < <(
+            find texts -maxdepth 1 -type f \
+              \( -iname "*.txt" -o -iname "*.md" \) \
+              ! -name "index.json" \
+              ! -name "*.tmp" \
+              ! -name "*.swp" \
+              ! -name "*.bak" \
+              ! -name "*~" \
+              -print0 | sort -z
+          )
 
           echo "]" >> texts/index.json
 
@@ -44,5 +53,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add texts/index.json
-          git commit -m "Auto update index.json" || echo "No changes to commit"
+          git commit -m "Auto update index.json" || echo "No changes"
           git push
