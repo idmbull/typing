@@ -1,5 +1,6 @@
 // /scripts/loader.js
 import { DOM, STATE } from "./state.js";
+import { convertMarkdownToPlain } from "./utils.js";
 
 export let PLAYLIST = [];
 export let TEXT_SECTIONS = {};
@@ -35,13 +36,18 @@ export async function loadInputTextFromFile(filename) {
         }
 
         if (line.startsWith("## ")) {
-            currentSection = line.replace("##", "").trim();
-            SECTION_ORDER.push(currentSection);
-            TEXT_SECTIONS[currentSection] = "";
+            const rawTitle = line.replace("##", "").trim();
+            const cleanTitle = convertMarkdownToPlain(rawTitle);
+
+            currentSection = cleanTitle;
+            SECTION_ORDER.push(cleanTitle);
+            TEXT_SECTIONS[cleanTitle] = "";
             return;
         }
 
-        if (currentSection) TEXT_SECTIONS[currentSection] += line + "\n";
+        if (currentSection) {
+            TEXT_SECTIONS[currentSection] += line + "\n";
+        }
     });
 
     if (headerTitle)
