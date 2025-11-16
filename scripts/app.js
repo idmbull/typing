@@ -90,6 +90,9 @@ function bindEvents() {
 
     // Chọn đoạn (difficulty)
     DOM.difficultySelect.addEventListener("change", () => {
+        const sec = DOM.difficultySelect.value;
+        // ⭐ Header theo section
+        document.querySelector("header h1").textContent = sec;
         const text = getCurrentSectionText();
         STATE.originalText = text;
         displayText(text);
@@ -97,6 +100,7 @@ function bindEvents() {
         resetState();
         updateStatsDOMImmediate(100, 0, "0s", 0);
     });
+
 
     // Theme toggle
     DOM.themeToggle.addEventListener("click", () => {
