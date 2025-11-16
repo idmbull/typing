@@ -1,0 +1,41 @@
+name: Auto Generate index.json
+
+on:
+  push:
+    paths:
+      - 'texts/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Generate index.json
+        run: |
+          echo "[" > texts/index.json
+          
+          files=$(ls texts/*.txt | sed 's/texts\///')
+          count=$(echo "$files" | wc -l)
+          i=1
+          
+          for file in $files; do
+            echo "  \"${file}\"" >> texts/index.json
+            if [ $i -lt $count ]; then
+              echo "," >> texts/index.json
+            fi
+            i=$((i+1))
+          done
+          
+          echo "]" >> texts/index.json
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add texts/index.json
+          git commit -m "Auto update index.json" || echo "No changes"
+          git push
