@@ -2,25 +2,6 @@
 import { DOM, STATE } from "./state.js";
 
 /* ---------------------------------------------------------
-    FORMAT THỜI GIAN: < 60s = Xs, >= 60s = Xm
-   --------------------------------------------------------- */
-function formatTime(seconds) {
-    if (seconds === undefined || seconds === null || isNaN(seconds)) {
-        return "0s";
-    }
-
-    seconds = Math.floor(seconds);
-
-    if (seconds < 60) {
-        return `${seconds}s`;
-    }
-
-    const mins = Math.floor(seconds / 60);
-    return `${mins}m`;
-}
-
-
-/* ---------------------------------------------------------
     BATCHED STAT UPDATES (hiệu năng cao)
    --------------------------------------------------------- */
 export function scheduleStatsUpdate() {
@@ -43,10 +24,10 @@ export function scheduleStatsUpdate() {
 /* ---------------------------------------------------------
     UPDATE STATS IMMEDIATELY
    --------------------------------------------------------- */
-export function updateStatsDOMImmediate(accuracy, wpm, timeSecs, errs) {
+export function updateStatsDOMImmediate(accuracy, wpm, timeText, errs) {
     DOM.accuracyEl.textContent = `${accuracy}%`;
     DOM.wpmEl.textContent = `${wpm}`;
-    DOM.timeEl.textContent = `${formatTime(timeSecs)}`;
+    DOM.timeEl.textContent = `${timeText}`;
     DOM.errorsEl.textContent = `${errs}`;
 }
 
@@ -62,8 +43,8 @@ export function startTimer() {
     STATE.timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - STATE.startTime) / 1000);
 
-        // ⭐ hiển thị thời gian theo format mới
-        DOM.timeEl.textContent = formatTime(elapsed);
+        // hiển thị thời gian
+        DOM.timeEl.textContent = `${elapsed}s`;
 
         // tính WPM
         const words = DOM.textInput.value.trim()

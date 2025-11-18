@@ -6,9 +6,17 @@ export let PLAYLIST = [];
 export let TEXT_SECTIONS = {};
 export let SECTION_ORDER = [];
 
+function cleanText(text) {
+    return text
+        .replace(/&nbsp;/gi, " ")  // đổi thành khoảng trắng bình thường
+        .replace(/\u00A0/g, " ");  // thay ký tự NBSP thật
+}
+
+
 /** Load danh sách file từ texts/index.json */
 export async function loadPlaylist() {
-    const resp = await fetch("texts/index.json");
+    // const resp = await fetch("texts/index.json");
+    const resp = await fetch("index.json");
     PLAYLIST = await resp.json();
 
     DOM.playlistSelect.innerHTML = PLAYLIST.map(f => {
@@ -20,7 +28,9 @@ export async function loadPlaylist() {
 /** Load nội dung từ file txt hoặc md */
 export async function loadInputTextFromFile(filename) {
 
-    const raw = await (await fetch(`texts/${filename}`)).text();
+    let raw = await (await fetch(`texts/${filename}`)).text();
+    raw = cleanText(raw);
+
 
     // Reset cấu trúc
     TEXT_SECTIONS = {};

@@ -58,6 +58,10 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
+strong {
+    font-weight: normal;
+}
+
 /* ============================
    2. MAIN LAYOUT
    ============================ */
@@ -153,14 +157,14 @@ h1 {
     font-size: 1.1rem;
     transition: transform 0.3s ease;
     min-height: 100px;
-    font-family: "JetBrains Mono", monospace;
+    font-family: "PT Mono", monospace;
 }
 
 .text-display span {
     transition: all 0.2s;
     white-space: pre-wrap;
     word-wrap: break-word;
-    font-family: "JetBrains Mono", monospace;
+    font-family: "PT Mono", monospace;
 }
 
 /* ----- Scroll ----- */

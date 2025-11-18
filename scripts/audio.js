@@ -20,7 +20,7 @@ export function playClick() {
         STATE.clickIndex++;
         a.currentTime = 0;
         a.play().catch(noop);
-    } catch (e) {}
+    } catch (e) { }
 }
 
 
@@ -29,7 +29,8 @@ export function playClick() {
    --------------------------------------------------------- */
 
 function isWordSeparator(char) {
-    return !char || /\s|[.,!?:;"'`]/.test(char);
+    // return !char || /\s|[.,!?:;"'`]/.test(char);
+    return !char || /\s|[.,!?:;"`]/.test(char);
 }
 
 function isNewWordStarting(currentText, previousText) {
@@ -38,6 +39,9 @@ function isNewWordStarting(currentText, previousText) {
 
     const lastChar = currentText[currentText.length - 1];
     const prevLast = previousText[previousText.length - 1];
+
+    // CHẶN bắt đầu từ bằng dấu '
+    if (lastChar === "'") return false;
 
     return isWordSeparator(prevLast) && !isWordSeparator(lastChar);
 }
@@ -100,7 +104,7 @@ async function fetchWordFromSheet(word) {
                 .map(s => s.trim())
                 .filter(Boolean);
         }
-    } catch (e) {}
+    } catch (e) { }
 
     return null;
 }
