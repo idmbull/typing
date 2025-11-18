@@ -17,7 +17,7 @@ jobs:
       - name: Generate index.json
         run: |
           mkdir -p texts
-          echo "[" > texts/index.json
+          echo "[" > index.json
 
           first=true
 
@@ -29,10 +29,10 @@ jobs:
             esc=$(printf '%s' "$name" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n")))')
 
             if [ "$first" = true ]; then
-              printf '  %s\n' "$esc" >> texts/index.json
+              printf '  %s\n' "$esc" >> index.json
               first=false
             else
-              printf ',\n  %s\n' "$esc" >> texts/index.json
+              printf ',\n  %s\n' "$esc" >> index.json
             fi
 
           done < <(
@@ -46,12 +46,12 @@ jobs:
               -print0 | sort -z
           )
 
-          echo "]" >> texts/index.json
+          echo "]" >> index.json
 
       - name: Commit changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add texts/index.json
+          git add index.json
           git commit -m "Auto update index.json" || echo "No changes"
           git push
