@@ -36,7 +36,8 @@ export let STATE = {
     clickIndex: 0,
     lastSpokenWord: '',
     speakLock: false,
-    prevInputText: ''
+    prevInputText: '',
+    audioCache: {},   // lưu audio preload
 };
 
 export function resetState() {
