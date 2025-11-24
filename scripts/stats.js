@@ -43,10 +43,23 @@ export function startTimer() {
     STATE.timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - STATE.startTime) / 1000);
 
-        // hiển thị thời gian
-        DOM.timeEl.textContent = `${elapsed}s`;
+        // ⭐ HIỂN THỊ THỜI GIAN
+        if (elapsed < 60) {
+            // < 1 phút → chỉ hiển thị "23s"
+            DOM.timeEl.textContent = `${elapsed}s`;
+        } else {
+            // ≥ 1 phút → hiển thị mm:ss
+            const minutes = Math.floor(elapsed / 60)
+                .toString()
+                .padStart(2, "0");
+            const seconds = (elapsed % 60)
+                .toString()
+                .padStart(2, "0");
 
-        // tính WPM
+            DOM.timeEl.textContent = `${minutes}:${seconds}`;
+        }
+
+        // ⭐ TÍNH WPM
         const words = DOM.textInput.value.trim()
             ? DOM.textInput.value.trim().split(/\s+/).length
             : 0;
@@ -56,6 +69,7 @@ export function startTimer() {
 
     }, 1000);
 }
+
 
 export function stopTimer() {
     clearInterval(STATE.timerInterval);

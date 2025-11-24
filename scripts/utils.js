@@ -50,52 +50,6 @@ export function convertMarkdownToPlain(md) {
 }
 
 // Inline footnotes → <span data-note="">
-
-// export function convertInlineFootnotes(md) {
-
-//     let out = md;
-
-//     /* ============================================================
-//        1) SENTENCE NOTE — dấu câu + ^[]
-//        - Tooltip đặt vào dấu câu.
-//        - Bắt luôn ký tự đóng sau dấu câu: ” ’ " ) ]
-//     ============================================================ */
-//     out = out.replace(
-//         /([.!?;][)"'\u2019\u201D\u00BB\u203A\u2039\u00AB\u2018\u201C\u0022\u0027\]]*)\^\[(.*?)\]/gu,
-//         (m, punct, note) => {
-//             return `<span class="tooltip-word type-sentence" data-note="${note.trim()}">${punct}</span>`;
-//         }
-//     );
-
-//     /* ============================================================
-//        2) PHRASE NOTE — **phrase**^[note]
-//        - Tooltip bao toàn bộ cụm bold.
-//        - Bold là bắt buộc đối với phrase.
-//     ============================================================ */
-//     out = out.replace(
-//         /\*\*(.+?)\*\*\^\[(.*?)\]/gs,
-//         (m, phrase, note) => {
-//             return `<span class="tooltip-word type-phrase" data-note="${note.trim()}">**${phrase}**</span>`;
-//         }
-//     );
-
-//     /* ============================================================
-//        3) WORD NOTE — word^[note]
-//        - Chỉ 1 từ đứng trước footnote.
-//        - Không match khi có ** (vì đó là phrase)
-//        - Không match trong HTML (< ... >)
-//        - Không match multi-word
-//     ============================================================ */
-//     out = out.replace(
-//         /(?<!>)(?<!\*)([\p{L}0-9'’]+)\^\[(.*?)\]/gu,
-//         (m, word, note) => {
-//             return `<span class="tooltip-word type-word" data-note="${note.trim()}">${word}</span>`;
-//         }
-//     );
-
-//     return out;
-// }
-
 export function convertInlineFootnotes(md) {
     let out = "";
     let i = 0;

@@ -86,20 +86,33 @@ function bindEvents() {
     DOM.playlistSelect.addEventListener("change", async (e) => {
         await loadInputTextFromFile(e.target.value);
         init();
+
+        // ⭐ Auto scroll when switching playlist
+        DOM.textContainer.scrollTop = 0;
     });
+
 
     // Chọn đoạn (difficulty)
     DOM.difficultySelect.addEventListener("change", () => {
         const sec = DOM.difficultySelect.value;
-        // ⭐ Header theo section
+
+        // ⭐ Đổi header theo tên section
         document.querySelector("header h1").textContent = sec;
+
+        // ⭐ Render lại đoạn văn
         const text = getCurrentSectionText();
         STATE.originalText = text;
         displayText(text);
+
+        // Reset input & state
         DOM.textInput.value = "";
         resetState();
         updateStatsDOMImmediate(100, 0, "0s", 0);
+
+        // ⭐⭐ AUTO-SCROLL TO TOP ⭐⭐
+        DOM.textContainer.scrollTop = 0;
     });
+
 
 
     // Theme toggle

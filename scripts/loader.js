@@ -8,21 +8,23 @@ export let SECTION_ORDER = [];
 
 function cleanText(text) {
     return text
-        .replace(/&nbsp;/gi, " ")  // đổi thành khoảng trắng bình thường
-        .replace(/\u00A0/g, " ");  // thay ký tự NBSP thật
+        .replace(/&nbsp;/gi, " ")
+        .replace(/\u00A0/g, " ")
+        .replace(/[‘’]/g, "'")
+        .replace(/—/g, "-");
 }
 
-
-/** Load danh sách file từ texts/index.json */
+/** Load danh sách file từ index.json */
 export async function loadPlaylist() {
-    // const resp = await fetch("texts/index.json");
     const resp = await fetch("index.json");
     PLAYLIST = await resp.json();
 
-    DOM.playlistSelect.innerHTML = PLAYLIST.map(f => {
-        const name = f.replace(".txt", "").replace(".md", "");
-        return `<option value="${f}">${name}</option>`;
-    }).join("");
+    DOM.playlistSelect.innerHTML = PLAYLIST
+        .map(f => {
+            const name = f.replace(".txt", "").replace(".md", "");
+            return `<option value="${f}">${name}</option>`;
+        })
+        .join("");
 }
 
 /** Load nội dung từ file txt hoặc md */
@@ -31,34 +33,52 @@ export async function loadInputTextFromFile(filename) {
     let raw = await (await fetch(`texts/${filename}`)).text();
     raw = cleanText(raw);
 
-
     // Reset cấu trúc
     TEXT_SECTIONS = {};
     SECTION_ORDER = [];
 
-    let headerTitle = null;                   // tiêu đề từ "#"
-    let currentSection = null;                // tiêu đề section hiện tại
-    let foundSection = false;                 // phát hiện ## hay chưa
-    let openingBuffer = [];                   // nội dung trước ## (mở đầu)
-
-    const fileTitle = filename.replace(/\.[^.]+$/, ""); // tên file không đuôi
     const lines = raw.split(/\r?\n/);
+    const fileTitle = filename.replace(/\.[^.]+$/, "");
 
-    /** -----------------------------
-     * 1) QUÉT FILE – BẮT HEADING & SECTION
-     * ------------------------------ */
+    /** =============================
+     * 1) Lấy tiêu đề # (nếu có)
+     * ============================= */
+    let headerTitle = null;
+
     for (let line of lines) {
-
-        // Bắt tiêu đề "# Tiêu đề bài"
-        if (line.startsWith("# ") && !headerTitle) {
+        if (line.startsWith("# ")) {
             const clean = line.replace("#", "").trim();
             headerTitle = convertMarkdownToPlain(clean);
-            continue;
+            break;
         }
+    }
 
-        // Gặp section "## ..."
+    if (!headerTitle) headerTitle = fileTitle;
+
+    /** =============================
+     * 2) Tạo section "Toàn văn"
+     * ============================= */
+    // Loại bỏ dòng # Tiêu đề khi render để gõ
+    let cleanedRaw = raw.split(/\r?\n/);
+
+    // nếu dòng đầu là # ..., thì bỏ nó đi
+    if (cleanedRaw[0].startsWith("# ")) {
+        cleanedRaw = cleanedRaw.slice(1);
+    }
+
+    // ghép lại và trim
+    TEXT_SECTIONS["Full"] = cleanedRaw.join("\n").trim();
+
+    SECTION_ORDER.push("Full");
+
+    /** =============================
+     * 3) Parse các section ## ...
+     * ============================= */
+    let currentSection = null;
+
+    for (let line of lines) {
+
         if (line.startsWith("## ")) {
-            foundSection = true;
 
             const rawTitle = line.replace("##", "").trim();
             const cleanTitle = convertMarkdownToPlain(rawTitle);
@@ -69,54 +89,15 @@ export async function loadInputTextFromFile(filename) {
             continue;
         }
 
-        // Thu thập nội dung
         if (currentSection) {
             TEXT_SECTIONS[currentSection] += line + "\n";
-        } else {
-            openingBuffer.push(line);
         }
     }
 
-    /** -----------------------------
-     * 2) TRƯỜNG HỢP: KHÔNG CÓ SECTION ##
-     * ------------------------------ */
-    if (!foundSection) {
-
-        // Nếu có # dùng làm title, không có thì tên file
-        const title = headerTitle || fileTitle;
-        SECTION_ORDER = [title];
-
-        // Nội dung = toàn bộ file trừ dòng "#"
-        let content = raw;
-        if (headerTitle) {
-            content = raw.split(/\r?\n/).slice(1).join("\n");
-        }
-
-        TEXT_SECTIONS[title] = content.trim();
-
-        // Header = title
-        document.querySelector("header h1").textContent = title;
-        rebuildSectionSelect();
-        return;
-    }
-
-    /** -----------------------------
-     * 3) TRƯỜNG HỢP: CÓ SECTION ##
-     *    XỬ LÝ NỘI DUNG MỞ ĐẦU
-     * ------------------------------ */
-    const openingText = openingBuffer.join("\n").trim();
-
-    if (openingText) {
-        // Tên section đầu tiên = # tiêu đề bài, hoặc tên file
-        const firstName = headerTitle || fileTitle;
-
-        SECTION_ORDER.unshift(firstName);
-        TEXT_SECTIONS[firstName] = openingText;
-    }
-
-    /** Header = tên section đầu tiên */
-    const firstHeader = SECTION_ORDER[0];
-    document.querySelector("header h1").textContent = firstHeader;
+    /** =============================
+     * 4) Set header theo dòng #
+     * ============================= */
+    document.querySelector("header h1").textContent = headerTitle;
 
     rebuildSectionSelect();
 }
