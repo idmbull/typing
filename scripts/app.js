@@ -5,6 +5,7 @@ import { displayText } from "./renderer.js";
 import { handleInputEvent } from "./input-handler.js";
 import { initTheme, setTheme } from "./theme.js";
 import { updateStatsDOMImmediate } from "./stats.js";
+import { loadRawTextFromUserFile, setupFileLoader } from "./loader.js";
 
 /* ---------------------------------------------------------
     START EXERCISE
@@ -170,4 +171,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 5) Bind events
     bindEvents();
+});
+
+// đưa nội dung file vào ứng dụng
+setupFileLoader(async (content, filename) => {
+    await loadRawTextFromUserFile(content, filename);
+
+    const txt = getCurrentSectionText();
+    STATE.originalText = txt;
+    displayText(txt);
+
+    DOM.textInput.value = "";
+    resetState();
+    updateStatsDOMImmediate(100, 0, "0s", 0);
+
+    DOM.textContainer.scrollTop = 0;
+});
+
+document.getElementById("fileLoaderBtn").addEventListener("click", () => {
+    document.getElementById("fileLoader").click();
+});
+
+document.getElementById("fileLoader").addEventListener("change", (e) => {
+    if (e.target.files.length > 0) {
+        document.getElementById("fileLoaderBtn").textContent = "✔ Loaded";
+    }
 });

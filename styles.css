@@ -601,3 +601,21 @@ select:focus {
         font-size: 1.2rem;
     }
 }
+
+#fileLoaderBtn {
+    background: linear-gradient(to right, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 120px;
+    transition: all 0.3s ease;
+}
+
+#fileLoaderBtn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
