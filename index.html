@@ -5,11 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gõ Chính Tả - Phát Âm Khi Bắt Đầu Từ</title>
-
-    <!-- MarkedJS để parse Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <!-- CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa&family=Courier+Prime&family=PT+Mono&display=swap"
@@ -62,7 +58,7 @@
                         <input type="checkbox" id="soundToggle" checked>
                         <span class="slider"></span>
                     </label>
-                    <label for="soundToggle">TypingSound</label>
+                    <label for="soundToggle">Sound</label>
                 </div>
 
                 <div class="toggle-container">
@@ -70,7 +66,7 @@
                         <input type="checkbox" id="autoPronounceToggle" checked>
                         <span class="slider"></span>
                     </label>
-                    <label for="autoPronounceToggle">Word Sound</label>
+                    <label for="autoPronounceToggle">Speak Word</label>
                 </div>
 
                 <div class="toggle-container">
@@ -80,33 +76,69 @@
                     </label>
                     <label for="autoTooltipToggle">Tooltip</label>
                 </div>
+
+                <!-- ⭐ NEW: Global Blind Mode Toggle -->
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="blindModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="blindModeToggle">Blind Mode</label>
+                </div>
             </div>
         </div>
 
         <footer>
             <select id="playlist"></select>
-
             <label for="difficulty">> </label>
             <select id="difficulty"></select>
         </footer>
+
+        <!-- Dictation Modal -->
+        <div id="dictationModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>🎧 Dictation Setup</h2>
+                <label>
+                    Subtitle
+                    <input type="file" id="dictationSubInput" accept=".txt,.tsv,.srt" />
+                </label>
+                <label>
+                    Audio
+                    <input type="file" id="dictationAudioInput" accept="audio/*" />
+                </label>
+                <!-- Checkbox này sẽ sync với Global Blind Mode -->
+                <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+                    <input type="checkbox" id="dictationBlindMode" />
+                    Blind Mode (ẩn chữ)
+                </label>
+                <div class="modal-actions">
+                    <button id="dictationCancelBtn" class="modal-btn">Cancel</button>
+                    <button id="dictationStartBtn" class="modal-btn primary" disabled>Start Dictation</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="globalTooltip"></div>
 
     <!-- Floating buttons -->
     <div class="floating-buttons">
-        <button id="startBtn">Start</button>
-        <button id="resetBtn">Reset</button>
-        <button id="themeToggle">Dark</button>
+        <button id="startBtn" class="floating-btn">Start</button>
+        <button id="resetBtn" class="floating-btn">Reset</button>
+        <button id="themeToggle" class="floating-btn">Dark</button>
         <input type="file" id="fileLoader" accept=".txt,.md,.json" hidden>
-        <button id="fileLoaderBtn">Upload File</button>
-
+        <button id="fileLoaderBtn" class="floating-btn">Upload File</button>
+        <button id="dictationBtn" class="floating-btn">🎧 Dictation</button>
+        <div class="dictation-volume">
+            <span class="volume-icon">🔊</span>
+            <input type="range" id="dictationVolume" min="0" max="5" step="0.1" value="1">
+        </div>
     </div>
 
-    <!-- Hidden audio player -->
-    <audio id="player" style="display:none;"></audio>
+    <button id="dictationReplayBtn" class="floating-btn hidden" style="position:fixed; top:20px; left:20px; z-index:1000; width:auto; padding:10px 20px;">🔄 Replay</button>
 
-    <!-- ES6 Modules: đường dẫn tương đối (bắt buộc cho GitHub Pages) -->
+    <audio id="player" class="hidden"></audio>
+
     <script type="module" src="scripts/app.js"></script>
 </body>
 

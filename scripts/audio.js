@@ -23,21 +23,94 @@ export function playClick() {
 }
 
 /* ---------------------------------------------------------
-    WORD DETECTION (giữ nguyên)
+    WORD DETECTION (đã nâng cấp, hỗ trợ số)
 --------------------------------------------------------- */
-function isWordSeparator(char) {
-    return !char || /\s|[.,!?:;"`]/.test(char);
+// function isWordSeparator(char, prevChar = "", nextChar = "") {
+//     if (!char) return true;
+
+//     const c = char;
+//     const p = prevChar;
+//     const n = nextChar;
+
+//     // Nếu là số + (, . - /) + số → KHÔNG phải separator (bên trong một số)
+//     // Ví dụ: 500,000 ; 1.234.567 ; 12-05-2025 ; 2025/11/26 ; 3.14
+//     if (/[0-9]/.test(p) && /[0-9]/.test(n) && /[,.\/-]/.test(c)) {
+//         return false;
+//     }
+
+//     // Còn lại: separator bình thường
+//     return /\s|[.!?:;"`]/.test(c);
+// }
+
+function isWordSeparator(c, prev = "", next = "") {
+    if (!c) return true;
+
+    // --- 1) Separator đặc biệt nằm GIỮA số (KHÔNG tách)
+    // 500,000 | 1.234.567 | 3.14 | 12-05-2025 | 2025/11/26
+    if (/[0-9]/.test(prev) && /[0-9]/.test(next) && /[.,\/-]/.test(c)) {
+        return false;
+    }
+
+    // --- 2) Full separator list (NHỮNG THỨ TÁCH TỪ)
+    // space, newline, tab, ., !, ?, :, ;, ", ', ), (, ], [, {, }
+    return /[\s\n\t]|[.!?:;"(){}\[\],]/.test(c);
 }
+
+
+
+// function isNewWordStarting(current, previous) {
+//     if (current.length < previous.length) return false;
+//     if (!previous || previous.length === 0) return !isWordSeparator(current[0]);
+
+//     const last = current[current.length - 1];
+//     const prevLast = previous[previous.length - 1];
+//     if (last === "'") return false;
+
+//     return isWordSeparator(prevLast) && !isWordSeparator(last);
+// }
+// function isNewWordStarting(current, previous) {
+//     if (current.length < previous.length) return false;
+//     if (!previous || previous.length === 0) return !isWordSeparator(current[0]);
+
+//     const last = current[current.length - 1];        // ký tự vừa gõ
+//     const prevLast = previous[previous.length - 1];  // ký tự ngay trước đó (trạng thái cũ)
+//     const secondLast = previous[previous.length - 2] || "";
+
+//     // Nếu ký tự mới KHÔNG phải chữ / số → không bao giờ là bắt đầu từ mới
+//     if (!/[a-z0-9]/i.test(last)) return false;
+
+//     // Xét prevLast có phải separator THẬT không (không phải dấu câu nằm trong số)
+//     if (isWordSeparator(prevLast, secondLast, last) || prevLast === "'") {
+//         return true;
+//     }
+
+//     // Ngược lại: không phải từ mới
+//     return false;
+// }
 function isNewWordStarting(current, previous) {
-    if (current.length < previous.length) return false;
-    if (!previous || previous.length === 0) return !isWordSeparator(current[0]);
+    const curLen = current.length;
+    const prevLen = previous.length;
 
-    const last = current[current.length - 1];
-    const prevLast = previous[previous.length - 1];
-    if (last === "'") return false;
+    // Không tăng độ dài → không phải gõ thêm
+    if (curLen <= prevLen) return false;
 
-    return isWordSeparator(prevLast) && !isWordSeparator(last);
+    // Ký tự vừa gõ
+    const last = current[curLen - 1];
+
+    // Nếu ký tự mới KHÔNG phải chữ hoặc số → không phải từ mới
+    if (!/[a-z0-9]/i.test(last)) return false;
+
+    // Ký tự ngay trước trong CURRENT
+    const prevChar = current[curLen - 2] || "";
+
+    // Nếu ký tự trước đó là separator thật → bắt đầu từ mới
+    return isWordSeparator(
+        prevChar,
+        current[curLen - 3] || "",
+        last
+    );
 }
+
 
 /* ============================================================
    CHECK AUDIO EXISTS (onloadedmetadata + timeout)
@@ -146,9 +219,10 @@ function preloadNextWords(originalText, currentWord, WIN = 5) {
 }
 
 /* ---------------------------------------------------------
-    CHECK NEW WORD & speak (giữ nguyên logic)
+    CHECK NEW WORD & speak (đã dùng isWordSeparator mới)
 --------------------------------------------------------- */
 export function checkNewWordAndSpeak(currentText, originalText) {
+
     const newWord = isNewWordStarting(currentText, STATE.prevInputText);
     STATE.prevInputText = currentText;
     if (!newWord) return;
@@ -160,10 +234,28 @@ export function checkNewWordAndSpeak(currentText, originalText) {
     const cursor = Math.max(0, currentText.length - 1);
 
     let start = cursor;
-    while (start > 0 && !isWordSeparator(originalText[start - 1])) start--;
+    while (
+        start > 0 &&
+        !isWordSeparator(
+            originalText[start - 1],
+            originalText[start - 2],
+            originalText[start]
+        )
+    ) {
+        start--;
+    }
 
     let end = cursor;
-    while (end < originalText.length - 1 && !isWordSeparator(originalText[end + 1])) end++;
+    while (
+        end < originalText.length - 1 &&
+        !isWordSeparator(
+            originalText[end + 1],
+            originalText[end],
+            originalText[end + 2]
+        )
+    ) {
+        end++;
+    }
 
     const fullWord = originalText.substring(start, end + 1).trim();
     if (!fullWord || fullWord === STATE.lastSpokenWord) return;
@@ -240,7 +332,7 @@ function tryPlayUrl(url, timeoutMs = 2000) {
    Nếu cache exists but playing it fails, skip that exact URL in fallback.
 ============================================================ */
 export async function playWord(raw) {
-    const word = (raw || "").trim().toLowerCase().replace(/['-]/g, "_");
+    const word = (raw || "").trim().toLowerCase().replace(/^'+|'+$/g, "").replace(/['-]/g, "_");
     if (!word) return;
 
     console.log("\n[AUDIO] speak:", word);

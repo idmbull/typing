@@ -7,37 +7,74 @@ export const DOM = {
     textInput: $('#textInput'),
     startBtn: $('#startBtn'),
     resetBtn: $('#resetBtn'),
+    
+    // Settings
     soundToggle: $('#soundToggle'),
     autoPronounceToggle: $('#autoPronounceToggle'),
+    autoTooltipToggle: $('#autoTooltipToggle'),
+    blindModeToggle: $('#blindModeToggle'), // ⭐ NEW
+    themeToggle: $('#themeToggle'),
+    
     difficultySelect: $('#difficulty'),
+    playlistSelect: $('#playlist'),
+    
+    // Stats
     accuracyEl: $('#accuracy'),
     wpmEl: $('#wpm'),
     timeEl: $('#time'),
     errorsEl: $('#errors'),
-    themeToggle: $('#themeToggle'),
-    autoTooltipToggle: $('#autoTooltipToggle'),
+    
     globalTooltip: $('#globalTooltip'),
     audioPlayer: $('#player'),
-    playlistSelect: $('#playlist'),
+
+    // Dictation UI
+    dictationBtn: $('#dictationBtn'),
+    dictationReplayBtn: $('#dictationReplayBtn'),
+    dictationModal: $('#dictationModal'),
+    dictationSubInput: $('#dictationSubInput'),
+    dictationAudioInput: $('#dictationAudioInput'),
+    dictationBlindMode: $('#dictationBlindMode'),
+    dictationStartBtn: $('#dictationStartBtn'),
+    dictationCancelBtn: $('#dictationCancelBtn'),
 };
 
 export let STATE = {
     isActive: false,
     startTime: null,
     timerInterval: null,
+    
     statTotalKeys: 0,
     statCorrectKeys: 0,
     statErrors: 0,
     scheduledStatUpdate: false,
+    
     prevIndex: 0,
     textSpans: [],
     originalText: '',
+    
     clickPool: [],
     clickIndex: 0,
+    
     lastSpokenWord: '',
     speakLock: false,
     prevInputText: '',
-    audioCache: {},   // lưu audio preload
+    audioCache: {},
+    
+    blindMode: false, // ⭐ NEW Global state
+
+    mode: "typing", // "typing" | "dictation"
+
+    dictation: {
+        active: false,
+        segments: [],
+        fullText: "",
+        fullTextRaw: "",
+        currentSegmentIndex: 0,
+        audioUrl: null,
+        charToSeg: [],
+        charStarts: [],
+        charEnds: []
+    }
 };
 
 export function resetState() {
@@ -50,4 +87,5 @@ export function resetState() {
     STATE.prevIndex = 0;
     STATE.lastSpokenWord = '';
     STATE.prevInputText = '';
+    // blindMode giữ nguyên theo toggle UI
 }

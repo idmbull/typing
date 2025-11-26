@@ -168,7 +168,7 @@ h2 {
     transition: all 0.2s;
     white-space: pre-wrap;
     word-wrap: break-word;
-    font-family: "PT Mono", monospace;    
+    font-family: "PT Mono", monospace;
 }
 
 /* ----- Scroll ----- */
@@ -618,4 +618,302 @@ select:focus {
 #fileLoaderBtn:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.dict-future {
+    filter: blur(4px);
+    opacity: 0.4;
+}
+
+.dict-past {
+    opacity: 0.7;
+}
+
+.dict-current-seg {
+    opacity: 1;
+}
+
+.dict-hidden {
+    color: transparent;
+    text-decoration: underline dotted #cbd5e1;
+}
+
+/* modal demo */
+.modal.hidden {
+    display: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ... phần style modal bạn reuse theo style hiện tại ... */
+.blind-hidden {
+    opacity: 0;
+    filter: blur(3px);
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+/* ============================
+   CARET OVERLAY FOR BLIND MODE
+=============================== */
+
+/* Caret highlight style (simple caret color) */
+.caret-highlight {
+    color: var(--accent-color) !important;
+    font-weight: 700;
+}
+
+/* Dictation Volume Control */
+.dictation-volume {
+    width: 120px;                 /* bằng width của button */
+    display: flex;
+    flex-direction: column;       /* nằm theo cột giống button */
+    align-items: center;          /* căn giữa hoàn hảo */
+    justify-content: center;
+    padding: 6px 0;
+    /* background: var(--section-bg); */
+    border-radius: 10px;
+    /* box-shadow: 0 3px 8px var(--shadow-color); */
+}
+
+.volume-icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+
+#dictationVolume {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+    appearance: none;
+}
+
+
+/* ==============================
+   Dictation Volume UI
+============================== */
+.dictation-volume-wrapper {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+}
+
+#dictationVolume {
+    flex-grow: 1;
+    appearance: none;
+    height: 6px;
+    background: #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+/* Track */
+#dictationVolume::-webkit-slider-runnable-track {
+    height: 6px;
+    background: linear-gradient(90deg, #4a90e2, #7fc4fd);
+    border-radius: 4px;
+}
+
+/* Thumb */
+#dictationVolume::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #4a90e2;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -5px;
+}
+
+/* Value text */
+#dictationVolumeValue {
+    min-width: 40px;
+    text-align: right;
+    opacity: 0.85;
+}
+
+/* ==========================
+   Modal Actions - Unified Buttons
+========================== */
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.modal-btn {
+    width: 120px;
+    padding: 10px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--section-bg);
+    color: var(--primary-text);
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 3px 8px var(--shadow-color);
+    transition: 0.2s ease;
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px var(--shadow-color);
+    opacity: 0.95;
+}
+
+.modal-btn.primary {
+    
+    background: var(--accent-color);
+    color: white;
+    font-weight: 600;
+}
+
+.modal-btn.primary:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   DICTATION MODAL — Unified App Styling
+========================================== */
+#dictationModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);     /* mờ nền */
+    backdrop-filter: blur(6px);          /* làm mờ */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;                      /* nổi trên tất cả */
+    transition: opacity 0.25s ease;
+}
+
+#dictationModal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Modal content — khớp style giao diện */
+#dictationModal .modal-content {
+    background: var(--section-bg);       /* dùng màu của layout */
+    padding: 25px 28px;
+    border-radius: 12px;
+    width: 420px;
+    max-width: 90%;
+    box-shadow: 0 8px 30px var(--shadow-color);
+    animation: dictationModalFade 0.22s ease;
+}
+
+/* Animation mượt */
+@keyframes dictationModalFade {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Modal Title */
+#dictationModal h2 {
+    font-size: 22px;
+    margin-bottom: 12px;
+    color: var(--primary-text);
+    text-align: center;
+}
+
+/* Inputs */
+#dictationModal input[type="file"] {
+    width: 100%;
+    background: var(--section-bg);
+    border: 2px solid var(--shadow-color);
+    padding: 8px;
+    border-radius: 8px;
+    margin: 8px 0 14px 0;
+}
+
+/* Modal Actions — nút được đồng bộ */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--section-bg);
+    color: var(--primary-text);
+    box-shadow: 0 3px 8px var(--shadow-color);
+    cursor: pointer;
+    font-size: 15px;
+    transition: 0.2s ease;
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px var(--shadow-color);
+    opacity: 0.92;
+}
+
+.modal-btn.primary {
+    background: var(--accent-color);
+    color: white;
+    font-weight: 600;
+}
+
+.modal-btn.primary:hover {
+    opacity: 0.95;
+}
+
+/* ==========================================
+   Floating Buttons — Unified Styling
+========================================== */
+.floating-buttons button {
+    width: 120px;
+    padding: 12px 0;
+    font-size: 1rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: 0.25s ease;
+    background-size: 200% 100%;
+    background-position: left center;
+}
+
+.floating-buttons button:hover {
+    transform: translateY(-3px);
+    background-position: right center;
+    box-shadow: 0 8px 20px var(--shadow-color);
+}
+
+#startBtn {
+    background: linear-gradient(to right, #4a00e0, #8e2de2);
+}
+#resetBtn {
+    background: linear-gradient(to right, #cf214a, #8b200d);
+}
+#themeToggle {
+    background: linear-gradient(to right, #7f1aeb, #3f0d58);
+}
+#fileLoaderBtn {
+    background: linear-gradient(to right, #267085, #0a78ff);
+}
+#dictationBtn {
+    background: linear-gradient(135deg, #4a90e2, #7f96fd);
 }
