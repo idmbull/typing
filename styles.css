@@ -210,6 +210,14 @@ h2 {
     border-radius: 3px;
 }
 
+.blind-mode .current {
+    color: transparent !important;
+    /* Đổi thành transparent để ẩn hoàn toàn ký tự */
+    caret-color: transparent;
+    /* Ẩn con trỏ nhấp nháy mặc định nếu có */
+    transition: none;
+}
+
 /* ----- Scroll Indicator (bạn đang tắt) ----- */
 .scroll-indicator {
     position: absolute;
@@ -667,10 +675,13 @@ select:focus {
 
 /* Dictation Volume Control */
 .dictation-volume {
-    width: 120px;                 /* bằng width của button */
+    width: 120px;
+    /* bằng width của button */
     display: flex;
-    flex-direction: column;       /* nằm theo cột giống button */
-    align-items: center;          /* căn giữa hoàn hảo */
+    flex-direction: column;
+    /* nằm theo cột giống button */
+    align-items: center;
+    /* căn giữa hoàn hảo */
     justify-content: center;
     padding: 6px 0;
     /* background: var(--section-bg); */
@@ -769,7 +780,7 @@ select:focus {
 }
 
 .modal-btn.primary {
-    
+
     background: var(--accent-color);
     color: white;
     font-weight: 600;
@@ -786,12 +797,15 @@ select:focus {
 #dictationModal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);     /* mờ nền */
-    backdrop-filter: blur(6px);          /* làm mờ */
+    background: rgba(0, 0, 0, 0.55);
+    /* mờ nền */
+    backdrop-filter: blur(6px);
+    /* làm mờ */
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 99999;                      /* nổi trên tất cả */
+    z-index: 99999;
+    /* nổi trên tất cả */
     transition: opacity 0.25s ease;
 }
 
@@ -802,7 +816,8 @@ select:focus {
 
 /* Modal content — khớp style giao diện */
 #dictationModal .modal-content {
-    background: var(--section-bg);       /* dùng màu của layout */
+    background: var(--section-bg);
+    /* dùng màu của layout */
     padding: 25px 28px;
     border-radius: 12px;
     width: 420px;
@@ -817,6 +832,7 @@ select:focus {
         opacity: 0;
         transform: scale(0.92);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -905,15 +921,19 @@ select:focus {
 #startBtn {
     background: linear-gradient(to right, #4a00e0, #8e2de2);
 }
+
 #resetBtn {
     background: linear-gradient(to right, #cf214a, #8b200d);
 }
+
 #themeToggle {
     background: linear-gradient(to right, #7f1aeb, #3f0d58);
 }
+
 #fileLoaderBtn {
     background: linear-gradient(to right, #267085, #0a78ff);
 }
+
 #dictationBtn {
     background: linear-gradient(135deg, #4a90e2, #7f96fd);
 }
