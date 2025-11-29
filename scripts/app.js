@@ -22,12 +22,12 @@ function startExercise() {
 function resetExercise() {
     document.dispatchEvent(new CustomEvent("timer:stop"));
     resetState();
-    
+
     const text = STATE.mode === "dictation" ? STATE.dictation.fullTextRaw : getCurrentSectionText();
     STATE.originalText = STATE.mode === "dictation" ? STATE.dictation.fullText : text;
-    
+
     displayText(text);
-    
+
     DOM.textInput.value = "";
     DOM.textInput.disabled = false;
     DOM.startBtn.disabled = false;
@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     DOM.textInput.addEventListener("input", handleInputEvent);
     DOM.startBtn.addEventListener("click", startExercise);
     DOM.resetBtn.addEventListener("click", resetExercise);
-    
+
     DOM.playlistSelect.addEventListener("change", async (e) => {
         await loadInputTextFromFile(e.target.value);
         init();
@@ -82,7 +82,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Toggle Blind Mode qua UI (Checkbox)
     DOM.blindModeToggle.addEventListener("change", (e) => {
         STATE.blindMode = e.target.checked;
-        if(DOM.dictationBlindMode) DOM.dictationBlindMode.checked = e.target.checked;
+        if (STATE.blindMode) {
+            document.body.classList.add("blind-mode");
+        } else {
+            document.body.classList.remove("blind-mode");
+        }
+
+        if (DOM.dictationBlindMode) DOM.dictationBlindMode.checked = e.target.checked;
         applyBlindMode(DOM.textInput.value.length);
         DOM.textInput.focus();
     });
@@ -98,19 +104,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ⭐ GLOBAL HOTKEYS (Thêm mới đoạn này)
     document.addEventListener("keydown", (e) => {
         // Ctrl + B: Toggle Blind Mode
+        // Ctrl + B: Toggle Blind Mode
         if (e.ctrlKey && e.code === "KeyB") {
-            e.preventDefault(); // Chặn in đậm mặc định của trình duyệt
-            
-            // 1. Đổi trạng thái
-            STATE.blindMode = !STATE.blindMode;
-            
-            // 2. Đồng bộ UI Checkbox
-            DOM.blindModeToggle.checked = STATE.blindMode;
-            if(DOM.dictationBlindMode) DOM.dictationBlindMode.checked = STATE.blindMode;
+            e.preventDefault();
 
-            // 3. Áp dụng ngay lập tức
+            STATE.blindMode = !STATE.blindMode;
+
+            // Đồng bộ checkbox
+            DOM.blindModeToggle.checked = STATE.blindMode;
+
+            // ⭐ Thay toggle bằng add/remove để không bao giờ lỗi
+            if (STATE.blindMode) {
+                document.body.classList.add("blind-mode");
+            } else {
+                document.body.classList.remove("blind-mode");
+            }
+
             applyBlindMode(DOM.textInput.value.length);
         }
+
     });
 
     // Timer Events
@@ -131,4 +143,4 @@ setupFileLoader(async (content, filename) => {
     DOM.textContainer.scrollTop = 0;
 });
 document.getElementById("fileLoaderBtn").addEventListener("click", () => document.getElementById("fileLoader").click());
-document.getElementById("fileLoader").addEventListener("change", (e) => { if(e.target.files.length) $('#fileLoaderBtn').textContent = "✔ Loaded"; });
+document.getElementById("fileLoader").addEventListener("change", (e) => { if (e.target.files.length) $('#fileLoaderBtn').textContent = "✔ Loaded"; });
