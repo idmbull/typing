@@ -1,57 +1,66 @@
-name: Auto Generate index.json
+name: Generate JSON files
 
 on:
   push:
     paths:
-      - 'texts/typing/**'
-  workflow_dispatch:
+      - "texts/dictation/*.txt"
+      - "texts/dictation/*.md"
+      - "texts/typing/*.md"
+      - "texts/typing/*.txt"
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Generate index.json
+      # ------------------------------------------
+      # 1) Generate dictation.json
+      # ------------------------------------------
+      - name: Generate dictation.json
         run: |
-          mkdir -p texts
-          echo "[" > index.json
-
+          echo "[" > dictation.json
           first=true
-
-          # Lấy file txt và md, LOẠI file rác, LOẠI index.json
-          while IFS= read -r -d '' file; do
-            name="${file#texts/}"
-
-            # encode JSON string an toàn
-            esc=$(printf '%s' "$name" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read().rstrip("\n")))')
-
+          for f in $(ls texts/dictation/*.txt | sort -V); do
+            fname=$(basename "$f")
             if [ "$first" = true ]; then
-              printf '  %s\n' "$esc" >> index.json
+              echo "  \"$fname\"" >> dictation.json
               first=false
             else
-              printf ',\n  %s\n' "$esc" >> index.json
+              echo "  ,\"$fname\"" >> dictation.json
             fi
+          done
+          echo "]" >> dictation.json
 
-          done < <(
-            find texts -maxdepth 1 -type f \
-              \( -iname "*.txt" -o -iname "*.md" \) \
-              ! -name "index.json" \
-              ! -name "*.tmp" \
-              ! -name "*.swp" \
-              ! -name "*.bak" \
-              ! -name "*~" \
-              -print0 | sort -z
-          )
-
+      # ------------------------------------------
+      # 2) Generate index.json (typing)
+      # ------------------------------------------
+      - name: Generate index.json
+        run: |
+          echo "[" > index.json
+          first=true
+          for f in $(ls texts/typing/*.* | sort -V); do
+            fname=$(basename "$f")
+            if [ "$first" = true ]; then
+              echo "  \"$fname\"" >> index.json
+              first=false
+            else
+              echo "  ,\"$fname\"" >> index.json
+            fi
+          done
           echo "]" >> index.json
 
-      - name: Commit changes
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add index.json
-          git commit -m "Auto update index.json" || echo "No changes"
-          git push
+      # ------------------------------------------
+      # Commit lại 2 file JSON
+      # ------------------------------------------
+      - name: Commit JSON outputs
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update index.json & dictation.json"
+          file_pattern: |
+            index.json
+            dictation.json
