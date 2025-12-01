@@ -1,4 +1,7 @@
-// /scripts/dictation-app.js
+// ================================
+// dictation-app.js — Bản đã vá
+// ================================
+
 import { DOM, STATE, resetState } from "./state.js";
 import { updateStatsDOMImmediate } from "./stats.js";
 import { displayText } from "./renderer.js";
@@ -30,10 +33,32 @@ function resetDictState() {
 }
 
 /* ============================================================
+   ÁP DỤNG BLIND MODE CHO DICTATION (HÀM MỚI)
+============================================================ */
+export function applyDictationBlindMode() {
+    const spans = STATE.textSpans;
+    if (!spans || !spans.length) return;
+
+    const caret = DOM.textInput.value.length;
+
+    if (!STATE.blindMode) {
+        // Hiện toàn bộ
+        spans.forEach(s => s.classList.remove("blind-hidden"));
+        return;
+    }
+
+    // Blind Mode: chỉ hiện từ đầu → caret
+    for (let i = 0; i < spans.length; i++) {
+        if (i <= caret) spans[i].classList.remove("blind-hidden");
+        else spans[i].classList.add("blind-hidden");
+    }
+}
+
+/* ============================================================
    TẢI PLAYLIST TỪ dictation.json
 ============================================================ */
 async function loadDictationPlaylistToUI() {
-    const list = await loadDictationPlaylist(); // đọc dictation.json
+    const list = await loadDictationPlaylist();
     DOM.playlistSelect.innerHTML = list
         .map((f) => `<option value="${f}">${f.replace(".txt", "")}</option>`)
         .join("");
@@ -46,7 +71,6 @@ async function loadCurrentDictation() {
     const filename = DOM.playlistSelect.value;
     if (!filename) return;
 
-    // segments từ /texts/dictation/<file>.txt
     const segments = await loadDictationSegments(filename);
     if (!segments.length) {
         alert("File Dictation trống hoặc sai format!");
@@ -61,36 +85,46 @@ async function loadCurrentDictation() {
     STATE.dictation.fullTextRaw = fullTextRaw;
     STATE.dictation.charStarts = charStarts;
     STATE.dictation.active = true;
-    STATE.dictation.currentSegmentIndex = 0;
 
-    // Tìm file mp3 cùng tên trong texts/dictation/
+    // Load mp3
     const audioUrl = await findDictationAudio(filename);
-    if (!audioUrl) {
-        alert("Không tìm thấy file MP3 tương ứng!");
-    } else {
+    if (audioUrl) {
         const buf = await (await fetch(audioUrl)).arrayBuffer();
         await superPlayer.load(buf);
         STATE.dictation.audioUrl = audioUrl;
+    } else {
+        alert("Không tìm thấy file MP3 tương ứng!");
     }
 
-    // render text
+    // Render text
+    // Render text
     displayText(fullTextRaw);
 
-    // reset input
+    // ⭐ FIX QUAN TRỌNG — giống Typing Mode
+    STATE.prevIndex = 0;
+    if (STATE.textSpans[0]) {
+        STATE.textSpans[0].classList.add("current");
+    }
+
+    // Áp dụng blind mode
+    applyDictationBlindMode();
+
+
+    // Không cho gõ trước khi bấm START
     DOM.textInput.value = "";
-
-    // KHÔNG cho gõ trước khi bấm Start
     DOM.textInput.disabled = true;
-    STATE.isActive = false;
 
+    STATE.isActive = false;
     DOM.startBtn.disabled = false;
     DOM.startBtn.textContent = "Start";
 
     updateStatsDOMImmediate(100, 0, "0s", 0);
     DOM.textContainer.scrollTop = 0;
 
-    // đặt tiêu đề
     document.querySelector("header h1").textContent = filename.replace(".txt", "");
+
+    // Áp dụng trạng thái blind hiện tại (nếu bật)
+    applyDictationBlindMode();
 }
 
 /* ============================================================
@@ -119,7 +153,6 @@ function startDictation() {
 
     document.dispatchEvent(new CustomEvent("timer:start"));
 
-    // phát đoạn đầu
     STATE.dictation.currentSegmentIndex = 0;
     playCurrentSegment();
 }
@@ -138,50 +171,45 @@ function resetDictation() {
 document.addEventListener("DOMContentLoaded", async () => {
     initTheme();
 
-    // 1) Load playlist từ dictation.json
     await loadDictationPlaylistToUI();
-
-    // 2) Load bài đầu tiên
     await loadCurrentDictation();
 
-    // 3) Lắng nghe INPUT
-    DOM.textInput.addEventListener("input", () => handleDictationInput(superPlayer));
+    // Fix Volume: Gắn sự kiện cho thanh trượt
+    const volInput = document.getElementById("dictationVolume");
+    if (volInput) {
+        // Set âm lượng ban đầu theo giá trị HTML (2.5)
+        superPlayer.setVolume(parseFloat(volInput.value));
+
+        // Lắng nghe khi kéo thanh trượt
+        volInput.addEventListener("input", (e) => {
+            superPlayer.setVolume(parseFloat(e.target.value));
+        });
+    }
+
+    DOM.textInput.addEventListener("input", () => {
+        handleDictationInput(superPlayer);
+        applyDictationBlindMode();
+    });
+
     DOM.startBtn.addEventListener("click", startDictation);
     DOM.resetBtn.addEventListener("click", resetDictation);
     DOM.playlistSelect.addEventListener("change", loadCurrentDictation);
 
-    // Theme toggle
-    DOM.themeToggle?.addEventListener("click", () => {
-        const current = document.documentElement.getAttribute("data-theme") || "light";
-        setTheme(current === "light" ? "dark" : "light");
-    });
-
-    // Blind mode toggle
+    // Blind Mode toggle
     DOM.blindModeToggle?.addEventListener("change", (e) => {
         STATE.blindMode = e.target.checked;
-        if (STATE.blindMode) document.body.classList.add("blind-mode");
-        else document.body.classList.remove("blind-mode");
-    });
 
-    // Replay button
-    DOM.dictationReplayBtn?.addEventListener("click", () => playCurrentSegment());
-
-    // Volume slider
-    const vol = document.getElementById("dictationVolume");
-    vol?.addEventListener("input", () => {
-        superPlayer.setVolume(parseFloat(vol.value));
-    });
-
-    // Hotkey Ctrl + Space → replay đoạn
-    document.addEventListener("keydown", (e) => {
-        if (STATE.mode !== "dictation") return;
-        if (e.ctrlKey && e.code === "Space") {
-            e.preventDefault();
-            playCurrentSegment();
+        if (STATE.blindMode) {
+            document.body.classList.add("blind-mode");
+        } else {
+            document.body.classList.remove("blind-mode");
         }
+
+        applyDictationBlindMode();
     });
 
-    // Hotkey Ctrl + B → bật/tắt blind mode
+
+    // Hotkey Ctrl+B
     document.addEventListener("keydown", (e) => {
         if (STATE.mode !== "dictation") return;
         if (e.ctrlKey && (e.key === "b" || e.key === "B")) {
@@ -189,25 +217,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             STATE.blindMode = !STATE.blindMode;
             DOM.blindModeToggle.checked = STATE.blindMode;
 
-            if (STATE.blindMode) document.body.classList.add("blind-mode");
-            else document.body.classList.remove("blind-mode");
+            if (STATE.blindMode) {
+                document.body.classList.add("blind-mode");
+            } else {
+                document.body.classList.remove("blind-mode");
+            }
 
-            handleDictationInput(superPlayer);
+            applyDictationBlindMode();
         }
     });
 
-    // Không cho mất focus khi click ra ngoài
+    // Hotkey Ctrl + Space → replay segment hiện tại
+    document.addEventListener("keydown", (e) => {
+        if (STATE.mode !== "dictation") return;
+        if (e.ctrlKey && e.code === "Space") {
+            e.preventDefault();
+
+            const idx = STATE.dictation.currentSegmentIndex;
+            const seg = STATE.dictation.segments[idx];
+            if (!seg) return;
+
+            superPlayer.stop();
+            superPlayer.playSegment(seg.audioStart, seg.audioEnd);
+        }
+    });
+
+
+    // Fix mất focus
     DOM.textInput.addEventListener("blur", () => {
         if (STATE.mode === "dictation") {
             setTimeout(() => DOM.textInput.focus(), 50);
         }
     });
-
-    // Timer events
-    document.addEventListener("timer:start", () =>
-        import("./stats.js").then((m) => m.startTimer())
-    );
-    document.addEventListener("timer:stop", () =>
-        import("./stats.js").then((m) => m.stopTimer())
-    );
 });

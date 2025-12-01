@@ -18,7 +18,7 @@ function cleanDictationText(text) {
 
 function stripDictationMarkup(raw) {
     return raw ? raw.replace(/\^\[[^\]]*]/g, "")
-               .replace(/\*\*(.+?)\*\*/g, "$1") : "";
+        .replace(/\*\*(.+?)\*\*/g, "$1") : "";
 }
 
 function parseTSV(content) {
@@ -86,8 +86,8 @@ export function initDictation() {
 
     const readyCheck = () =>
         dictationStartBtn.disabled =
-            !DOM.dictationSubInput.files.length ||
-            !DOM.dictationAudioInput.files.length;
+        !DOM.dictationSubInput.files.length ||
+        !DOM.dictationAudioInput.files.length;
 
     DOM.dictationSubInput.addEventListener("change", readyCheck);
     DOM.dictationAudioInput.addEventListener("change", readyCheck);
@@ -152,27 +152,15 @@ export function initDictation() {
             displayText(STATE.dictation.fullTextRaw);
 
             DOM.textInput.value = "";
-            DOM.textInput.disabled = false;
-            DOM.textInput.focus();
+            DOM.textInput.disabled = true;  // chờ user bấm Start
+            DOM.startBtn.disabled = false;
+            DOM.startBtn.textContent = "Start";
 
-            document.querySelector("header h1").textContent =
-                "Dictation: " + subFile.name;
+            document.querySelector("header h1").textContent = subFile.name;
 
-            // 🔥 Play first segment
-            playSegment(0);
         };
 
         reader.readAsText(subFile, "utf-8");
-    });
-
-    /* ========================================================
-       HOTKEY — Ctrl + Space → replay
-    ======================================================== */
-    document.addEventListener("keydown", (e) => {
-        if (STATE.mode === "dictation" && e.ctrlKey && e.code === "Space") {
-            e.preventDefault();
-            playSegment(STATE.dictation.currentSegmentIndex);
-        }
     });
 
     /* ========================================================

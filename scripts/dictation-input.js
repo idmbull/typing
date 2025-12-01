@@ -1,9 +1,13 @@
-// /scripts/dictation-input.js
+// =============================================
+// dictation-input.js — Bản đã vá hoàn chỉnh
+// =============================================
+
 import { DOM, STATE } from "./state.js";
 import { showTooltipForSpan } from "./tooltip.js";
 import { playClick, checkNewWordAndSpeak } from "./audio.js";
 import { scheduleStatsUpdate } from "./stats.js";
 import { runTypingEngine } from "./typing-engine.js";
+import { applyDictationBlindMode } from "./dictation-app.js";
 
 /* Scroll giống typing */
 let pendingScroll = false;
@@ -44,7 +48,6 @@ export function handleDictationInput(superPlayer) {
     const dict = STATE.dictation;
     if (!dict.active) return;
 
-    // Chuẩn hóa input
     let val = DOM.textInput.value;
     if (val.includes("\n")) val = val.replace(/\n/g, " ");
     if (val.length > dict.fullText.length) val = val.slice(0, dict.fullText.length);
@@ -54,19 +57,17 @@ export function handleDictationInput(superPlayer) {
     const original = dict.fullText;
     const spans = STATE.textSpans;
 
-    // Auto start timer
+    // ❌ Không auto-start khi người dùng nhập
     if (!STATE.isActive) {
-        STATE.isActive = true;
-        DOM.startBtn.textContent = "Typing...";
-        DOM.startBtn.disabled = true;
-        document.dispatchEvent(new CustomEvent("exercise:start"));
+        DOM.textInput.value = "";
+        return;
     }
 
     // chạy Typing Engine
     STATE.originalText = original;
     const { caret, changed, newWord, isComplete } = runTypingEngine(currentText);
 
-    // Update changed spans
+    // Update spans
     for (const i of changed) {
         const span = spans[i];
         if (!span) continue;
@@ -76,31 +77,17 @@ export function handleDictationInput(superPlayer) {
         if (i < caret) {
             if (currentText[i] === original[i]) span.classList.add("correct");
             else span.classList.add("incorrect");
-
-            if (STATE.blindMode) span.classList.remove("blind-hidden");
-        } else {
-            if (STATE.blindMode && i > caret) span.classList.add("blind-hidden");
         }
     }
 
-    // caret
     STATE.prevIndex = caret;
     if (spans[caret]) {
         spans[caret].classList.add("current");
-        if (STATE.blindMode) spans[caret].classList.remove("blind-hidden");
         if (DOM.autoTooltipToggle?.checked) showTooltipForSpan(spans[caret]);
     }
 
-    // ⭐ FIX 2 — Ẩn toàn bộ ký tự sau caret (Blind Mode)
-    if (STATE.blindMode) {
-        for (let i = caret + 1; i < spans.length; i++) {
-            spans[i]?.classList.add("blind-hidden");
-        }
-    } else {
-        for (let i = caret + 1; i < spans.length; i++) {
-            spans[i]?.classList.remove("blind-hidden");
-        }
-    }
+    // ⭐ NEW — Áp dụng Blind Mode đúng chuẩn
+    applyDictationBlindMode();
 
     // Stats
     if (currentText.length > 0) {
@@ -138,7 +125,6 @@ export function handleDictationInput(superPlayer) {
         }
     }
 
-    // Completed
     if (isComplete) {
         DOM.textInput.disabled = true;
         DOM.startBtn.disabled = false;
