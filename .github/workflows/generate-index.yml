@@ -15,12 +15,10 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+        # ⚠️ Bỏ dòng persist-credentials để action có quyền push
+        # with:
+        #   persist-credentials: false
 
-      # ------------------------------------------
-      # 1) Generate dictation.json
-      # ------------------------------------------
       - name: Generate dictation.json
         run: |
           echo "[" > dictation.json
@@ -36,9 +34,6 @@ jobs:
           done
           echo "]" >> dictation.json
 
-      # ------------------------------------------
-      # 2) Generate index.json (typing)
-      # ------------------------------------------
       - name: Generate index.json
         run: |
           echo "[" > index.json
@@ -54,9 +49,6 @@ jobs:
           done
           echo "]" >> index.json
 
-      # ------------------------------------------
-      # Commit lại 2 file JSON
-      # ------------------------------------------
       - name: Commit JSON outputs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
