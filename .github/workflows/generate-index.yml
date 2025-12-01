@@ -3,8 +3,8 @@ name: Generate JSON files
 on:
   push:
     paths:
-      - "texts/dictation/*"   # chạy khi có file mới trong dictation
-      - "texts/typing/*"      # chạy khi có file mới trong typing
+      - "texts/dictation/**"
+      - "texts/typing/**"
 
 jobs:
   generate:
@@ -14,45 +14,38 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ------------------------------------------
-      # 1) Generate dictation.json (.txt + .md)
-      # ------------------------------------------
+      # 1) dictation.json: lấy .txt + .md trong texts/dictation
       - name: Generate dictation.json
         run: |
           echo "[" > dictation.json
           first=true
-          find texts/dictation -maxdepth 1 -type f \( -name "*.txt" -o -name "*.md" \) | sort -V | while IFS= read -r f; do
+          find texts/dictation -type f \( -iname "*.txt" -o -iname "*.md" \) | sort -V | while IFS= read -r f; do
             fname=$(basename "$f")
             if [ "$first" = true ]; then
-              printf "  \"%s\"\n" "$fname" >> dictation.json
+              printf '  "%s"\n' "$fname" >> dictation.json
               first=false
             else
-              printf "  ,\"%s\"\n" "$fname" >> dictation.json
+              printf '  ,"%s"\n' "$fname" >> dictation.json
             fi
           done
           echo "]" >> dictation.json
 
-      # ------------------------------------------
-      # 2) Generate index.json (như cũ)
-      # ------------------------------------------
+      # 2) index.json: lấy .txt + .md trong texts/typing
       - name: Generate index.json
         run: |
           echo "[" > index.json
           first=true
-          find texts/typing -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) | sort -V | while IFS= read -r f; do
+          find texts/typing -type f \( -iname "*.txt" -o -iname "*.md" \) | sort -V | while IFS= read -r f; do
             fname=$(basename "$f")
             if [ "$first" = true ]; then
-              printf "  \"%s\"\n" "$fname" >> index.json
+              printf '  "%s"\n' "$fname" >> index.json
               first=false
             else
-              printf "  ,\"%s\"\n" "$fname" >> index.json
+              printf '  ,"%s"\n' "$fname" >> index.json
             fi
           done
           echo "]" >> index.json
 
-      # ------------------------------------------
-      # Commit changes
-      # ------------------------------------------
       - name: Commit JSON outputs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
