@@ -27,7 +27,7 @@ jobs:
         run: |
           echo "[" > dictation.json
           first=true
-          find ./texts/dictation -type f \( -iname "*.txt" -o -iname "*.md" \) \
+          find ./texts/dictation -type f -iname "*.txt" -o -iname "*.md" \
           | sort -V | while IFS= read -r f; do
               fname=$(basename "$f")
               if [ "$first" = true ]; then
@@ -43,7 +43,7 @@ jobs:
         run: |
           echo "[" > index.json
           first=true
-          find ./texts/typing -type f \( -iname "*.txt" -o -iname "*.md" \) \
+          find ./texts/typing -type f -iname "*.txt" -o -iname "*.md" \
           | sort -V | while IFS= read -r f; do
               fname=$(basename "$f")
               if [ "$first" = true ]; then
