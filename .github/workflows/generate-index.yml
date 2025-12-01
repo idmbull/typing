@@ -3,9 +3,8 @@ name: Generate JSON files
 on:
   push:
     paths:
-      - "texts/dictation/*.txt"
-      - "texts/dictation/*.md"
-      - "texts/typing/*"
+      - "texts/dictation/*"   # chạy khi có file mới trong dictation
+      - "texts/typing/*"      # chạy khi có file mới trong typing
 
 jobs:
   generate:
@@ -15,12 +14,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # --- dictation.json ---
+      # ------------------------------------------
+      # 1) Generate dictation.json (.txt + .md)
+      # ------------------------------------------
       - name: Generate dictation.json
         run: |
           echo "[" > dictation.json
           first=true
-          find texts/dictation -maxdepth 1 -type f -name "*.txt" | sort -V | while IFS= read -r f; do
+          find texts/dictation -maxdepth 1 -type f \( -name "*.txt" -o -name "*.md" \) | sort -V | while IFS= read -r f; do
             fname=$(basename "$f")
             if [ "$first" = true ]; then
               printf "  \"%s\"\n" "$fname" >> dictation.json
@@ -31,7 +32,9 @@ jobs:
           done
           echo "]" >> dictation.json
 
-      # --- index.json ---
+      # ------------------------------------------
+      # 2) Generate index.json (như cũ)
+      # ------------------------------------------
       - name: Generate index.json
         run: |
           echo "[" > index.json
@@ -47,10 +50,13 @@ jobs:
           done
           echo "]" >> index.json
 
-      - name: Commit changes
+      # ------------------------------------------
+      # Commit changes
+      # ------------------------------------------
+      - name: Commit JSON outputs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto update JSON"
+          commit_message: "Auto-update index.json & dictation.json"
           file_pattern: |
             dictation.json
             index.json
