@@ -11,21 +11,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -------------------------------
-      # 1) Checkout repo
-      # -------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # -------------------------------
-      # 2) Generate dictation.json
-      # -------------------------------
       - name: Generate dictation.json
         run: |
           echo "[" > dictation.json
           first=true
-
-          # Tìm tất cả file .txt và .md trong texts/dictation
           find texts/dictation -type f \( -iname "*.txt" -o -iname "*.md" \) \
           | sort -V | while IFS= read -r f; do
               fname=$(basename "$f")
@@ -36,18 +28,12 @@ jobs:
                   printf '  ,"%s"\n' "$fname" >> dictation.json
               fi
           done
-
           echo "]" >> dictation.json
 
-      # -------------------------------
-      # 3) Generate index.json
-      # -------------------------------
       - name: Generate index.json
         run: |
           echo "[" > index.json
           first=true
-
-          # Tìm tất cả file .txt và .md trong texts/typing
           find texts/typing -type f \( -iname "*.txt" -o -iname "*.md" \) \
           | sort -V | while IFS= read -r f; do
               fname=$(basename "$f")
@@ -58,12 +44,8 @@ jobs:
                   printf '  ,"%s"\n' "$fname" >> index.json
               fi
           done
-
           echo "]" >> index.json
 
-      # -------------------------------
-      # 4) Commit JSON output
-      # -------------------------------
       - name: Commit JSON outputs
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
