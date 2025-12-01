@@ -3,7 +3,7 @@ name: Auto Generate index.json
 on:
   push:
     paths:
-      - 'texts/**'
+      - 'texts/typing/**'
   workflow_dispatch:
 
 jobs:
