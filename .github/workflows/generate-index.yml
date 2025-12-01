@@ -5,8 +5,7 @@ on:
     paths:
       - "texts/dictation/*.txt"
       - "texts/dictation/*.md"
-      - "texts/typing/*.md"
-      - "texts/typing/*.txt"
+      - "texts/typing/*"
 
 jobs:
   generate:
@@ -15,44 +14,43 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        # ⚠️ Bỏ dòng persist-credentials để action có quyền push
-        # with:
-        #   persist-credentials: false
 
+      # --- dictation.json ---
       - name: Generate dictation.json
         run: |
           echo "[" > dictation.json
           first=true
-          for f in $(ls texts/dictation/*.txt | sort -V); do
+          find texts/dictation -maxdepth 1 -type f -name "*.txt" | sort -V | while IFS= read -r f; do
             fname=$(basename "$f")
             if [ "$first" = true ]; then
-              echo "  \"$fname\"" >> dictation.json
+              printf "  \"%s\"\n" "$fname" >> dictation.json
               first=false
             else
-              echo "  ,\"$fname\"" >> dictation.json
+              printf "  ,\"%s\"\n" "$fname" >> dictation.json
             fi
           done
           echo "]" >> dictation.json
 
+      # --- index.json ---
       - name: Generate index.json
         run: |
           echo "[" > index.json
           first=true
-          for f in $(ls texts/typing/*.* | sort -V); do
+          find texts/typing -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) | sort -V | while IFS= read -r f; do
             fname=$(basename "$f")
             if [ "$first" = true ]; then
-              echo "  \"$fname\"" >> index.json
+              printf "  \"%s\"\n" "$fname" >> index.json
               first=false
             else
-              echo "  ,\"$fname\"" >> index.json
+              printf "  ,\"%s\"\n" "$fname" >> index.json
             fi
           done
           echo "]" >> index.json
 
-      - name: Commit JSON outputs
+      - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update index.json & dictation.json"
+          commit_message: "Auto update JSON"
           file_pattern: |
-            index.json
             dictation.json
+            index.json
