@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dictation 🎧</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Dictation</h1>
+            <p class="subtitle">Nghe – gõ theo audio, hỗ trợ tooltip & blind mode</p>
+        </header>
+
+        <div class="content">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="accuracy">100%</div>
+                    <div class="stat-label">Độ chính xác</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="wpm">0</div>
+                    <div class="stat-label">Từ/phút</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="time">0s</div>
+                    <div class="stat-label">Thời gian</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="errors">0</div>
+                    <div class="stat-label">Lỗi</div>
+                </div>
+            </div>
+
+            <div class="text-display-container" id="textContainer">
+                <div class="text-display" id="textDisplay"></div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="textInput" placeholder="Nghe và gõ lại tại đây..."></textarea>
+            </div>
+
+            <div class="settings">
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="soundToggle">Click</label>
+                </div>
+
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoPronounceToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="autoPronounceToggle">Speak Word</label>
+                </div>
+
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoTooltipToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="autoTooltipToggle">Tooltip</label>
+                </div>
+
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="blindModeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="blindModeToggle">Blind Mode</label>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <!-- Playlist dictation: tên file txt như d01.txt -->
+            <select id="playlist">
+                <option value="d01.txt">d01.txt</option>
+                <!-- sau này bạn thêm d02.txt, d03.txt... -->
+            </select>
+            <label for="difficulty">> </label>
+            <select id="difficulty">
+                <option value="Full">Full</option>
+            </select>
+        </footer>
+    </div>
+
+    <div id="globalTooltip"></div>
+
+    <div class="floating-buttons">
+        <button id="startBtn" class="floating-btn">Start</button>
+        <button id="resetBtn" class="floating-btn">Reset</button>
+        <button id="themeToggle" class="floating-btn">Dark</button>
+
+        <!-- Replay current segment -->
+        <button id="dictationReplayBtn" class="floating-btn hidden">🔄 Replay</button>
+        <button id="dictationBtn" class="floating-btn">📂 Load</button>
+
+
+        <!-- Volume -->
+        <div class="dictation-volume">
+            <input type="range" id="dictationVolume" min="0" max="5" step="0.1" value="2.5">
+        </div>
+
+        <!-- Quay về trang gõ -->
+        <button class="floating-btn turnBtn" onclick="window.location.href='index.html'">📘 Reading</button>
+    </div>
+
+    <!-- MODAL DICTATION (upload file giống bản cũ) -->
+    <div id="dictationModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Dictation từ file</h2>
+
+            <p>Chọn file TXT (hoặc TSV) chứa time + câu:</p>
+            <input type="file" id="dictationSubInput" accept=".txt,.tsv" />
+
+            <p style="margin-top:10px;">Chọn file MP3 tương ứng:</p>
+            <input type="file" id="dictationAudioInput" accept="audio/*" />
+
+            <div style="margin-top:12px;">
+                <label>
+                    <input type="checkbox" id="dictationBlindMode" />
+                    Blind mode cho Dictation
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button id="dictationCancelBtn" class="modal-btn">Huỷ</button>
+                <button id="dictationStartBtn" class="modal-btn primary" disabled>Bắt đầu</button>
+            </div>
+        </div>
+    </div>
+
+
+    <audio id="player" class="hidden"></audio>
+
+    <script type="module" src="scripts/dictation-app.js"></script>
+    <script type="module" src="scripts/dictation.js"></script>
+    <script type="module">
+        import { initDictation } from "./scripts/dictation.js";
+        initDictation();
+    </script>
+
+</body>
+
+</html>

@@ -31,7 +31,7 @@ export async function loadPlaylist() {
 /** Load nội dung từ file txt hoặc md */
 export async function loadInputTextFromFile(filename) {
 
-    let raw = await (await fetch(`texts/${filename}`)).text();
+    let raw = await (await fetch(`texts/typing/${filename}`)).text();
     raw = cleanText(raw);
 
     // Reset cấu trúc

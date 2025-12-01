@@ -937,3 +937,7 @@ select:focus {
 #dictationBtn {
     background: linear-gradient(135deg, #4a90e2, #7f96fd);
 }
+
+.turnBtn {
+    background: linear-gradient(135deg, #2e4577, #04139b);
+}

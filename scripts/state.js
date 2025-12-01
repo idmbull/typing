@@ -12,7 +12,7 @@ export const DOM = {
     soundToggle: $('#soundToggle'),
     autoPronounceToggle: $('#autoPronounceToggle'),
     autoTooltipToggle: $('#autoTooltipToggle'),
-    blindModeToggle: $('#blindModeToggle'), // ⭐ NEW
+    blindModeToggle: $('#blindModeToggle'), // ⭐ Global Blind Mode
     themeToggle: $('#themeToggle'),
     
     difficultySelect: $('#difficulty'),
@@ -50,20 +50,30 @@ export let STATE = {
     
     prevIndex: 0,
     textSpans: [],
-    originalText: '',
+    originalText: "",
+
+    // ⭐ WORD META (cho Speak Word)
+    wordTokens: [],   // ["there", "are", "many", ...]
+    wordStarts: [],   // [  0,     6,     10,   ...]
+    wordEnds: [],     // [  5,     9,     14,   ...]
     
+    // Click sound
     clickPool: [],
     clickIndex: 0,
     
-    lastSpokenWord: '',
+    // Audio state
+    lastSpokenWord: "",
     speakLock: false,
-    prevInputText: '',
+    prevInputText: "",
     audioCache: {},
     
-    blindMode: false, // ⭐ NEW Global state
+    // Blind Mode
+    blindMode: false, // ⭐ Global Blind Mode
 
+    // Mode
     mode: "typing", // "typing" | "dictation"
 
+    // Dictation meta
     dictation: {
         active: false,
         segments: [],
@@ -80,12 +90,19 @@ export let STATE = {
 export function resetState() {
     STATE.isActive = false;
     STATE.startTime = null;
+
     STATE.statTotalKeys = 0;
     STATE.statCorrectKeys = 0;
     STATE.statErrors = 0;
     STATE.scheduledStatUpdate = false;
+
     STATE.prevIndex = 0;
-    STATE.lastSpokenWord = '';
-    STATE.prevInputText = '';
+    STATE.lastSpokenWord = "";
+    STATE.prevInputText = "";
+
+    // ⭐ Reset word meta khi đổi bài / reset
+    STATE.wordTokens = [];
+    STATE.wordStarts = [];
+    STATE.wordEnds = [];
     // blindMode giữ nguyên theo toggle UI
 }

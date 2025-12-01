@@ -77,7 +77,7 @@
                     <label for="autoTooltipToggle">Tooltip</label>
                 </div>
 
-                <!-- ⭐ NEW: Global Blind Mode Toggle -->
+                <!-- Blind Mode -->
                 <div class="toggle-container">
                     <label class="toggle-switch">
                         <input type="checkbox" id="blindModeToggle">
@@ -93,30 +93,6 @@
             <label for="difficulty">> </label>
             <select id="difficulty"></select>
         </footer>
-
-        <!-- Dictation Modal -->
-        <div id="dictationModal" class="modal hidden">
-            <div class="modal-content">
-                <h2>🎧 Dictation Setup</h2>
-                <label>
-                    Subtitle
-                    <input type="file" id="dictationSubInput" accept=".txt,.tsv,.srt" />
-                </label>
-                <label>
-                    Audio
-                    <input type="file" id="dictationAudioInput" accept="audio/*" />
-                </label>
-                <!-- Checkbox này sẽ sync với Global Blind Mode -->
-                <label style="display:flex; align-items:center; gap:8px; margin-top:10px;">
-                    <input type="checkbox" id="dictationBlindMode" />
-                    Blind Mode (ẩn chữ)
-                </label>
-                <div class="modal-actions">
-                    <button id="dictationCancelBtn" class="modal-btn">Cancel</button>
-                    <button id="dictationStartBtn" class="modal-btn primary" disabled>Start Dictation</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div id="globalTooltip"></div>
@@ -127,14 +103,11 @@
         <button id="resetBtn" class="floating-btn">Reset</button>
         <button id="themeToggle" class="floating-btn">Dark</button>
         <input type="file" id="fileLoader" accept=".txt,.md,.json" hidden>
-        <button id="fileLoaderBtn" class="floating-btn">Upload File</button>
-        <button id="dictationBtn" class="floating-btn">🎧 Dictation</button>
-        <div class="dictation-volume">
-            <input type="range" id="dictationVolume" min="0" max="5" step="0.1" value="2.5">
-        </div>
-    </div>
+        <button id="fileLoaderBtn" class="floating-btn">📂 Load</button>
 
-    <button id="dictationReplayBtn" class="floating-btn hidden" style="position:fixed; top:20px; left:20px; z-index:1000; width:auto; padding:10px 20px;">🔄 Replay</button>
+        <!-- Nút mở Dictation App riêng -->
+        <button class="floating-btn turnBtn" onclick="window.location.href='dictation.html'">🎧 Listening</button>
+    </div>
 
     <audio id="player" class="hidden"></audio>
 

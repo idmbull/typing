@@ -1,15 +1,12 @@
-// /scripts/input-handler.js — chỉ còn Typing Mode
+// /scripts/dictation-input.js
 import { DOM, STATE } from "./state.js";
 import { showTooltipForSpan } from "./tooltip.js";
 import { playClick, checkNewWordAndSpeak } from "./audio.js";
 import { scheduleStatsUpdate } from "./stats.js";
 import { runTypingEngine } from "./typing-engine.js";
 
+/* Scroll giống typing */
 let pendingScroll = false;
-
-/* ---------------------------------------------------------
-   SCROLL LOGIC (Kindle-style)
---------------------------------------------------------- */
 function throttleScrollToCurrent() {
     if (pendingScroll) return;
     pendingScroll = true;
@@ -34,49 +31,42 @@ function throttleScrollToCurrent() {
         else if (caretY > safeZoneBot) delta = caretY - safeZoneBot;
 
         if (delta !== 0) {
-            delta = delta * 0.2; // damping
-            if (Math.abs(delta) > 5) {
-                container.scrollTop += delta;
-            }
+            delta = delta * 0.2;
+            if (Math.abs(delta) > 5) container.scrollTop += delta;
         }
     });
 }
 
-/* ---------------------------------------------------------
-   TYPING MODE
---------------------------------------------------------- */
-export function handleInputEvent() {
+/**
+ * Handle input cho Dictation Mode
+ */
+export function handleDictationInput(superPlayer) {
+    const dict = STATE.dictation;
+    if (!dict.active) return;
+
+    // Chuẩn hóa input
     let val = DOM.textInput.value;
-
-    // Đổi xuống dòng -> space
-    if (val.includes("\n")) {
-        val = val.replace(/\n/g, " ");
-    }
-
-    // Không cho gõ dài hơn bài gốc
-    const maxLen = STATE.originalText.length;
-    if (val.length > maxLen) {
-        val = val.slice(0, maxLen);
-    }
+    if (val.includes("\n")) val = val.replace(/\n/g, " ");
+    if (val.length > dict.fullText.length) val = val.slice(0, dict.fullText.length);
     DOM.textInput.value = val;
 
     const currentText = val;
-    const original = STATE.originalText;
+    const original = dict.fullText;
     const spans = STATE.textSpans;
 
-    // Auto start timer lần đầu gõ
+    // Auto start timer
     if (!STATE.isActive) {
-        document.dispatchEvent(new CustomEvent("exercise:start"));
         STATE.isActive = true;
         DOM.startBtn.textContent = "Typing...";
         DOM.startBtn.disabled = true;
+        document.dispatchEvent(new CustomEvent("exercise:start"));
     }
 
-    // Gọi TypingEngine
-    const engineOut = runTypingEngine(currentText);
-    const { caret, changed, newWord, isComplete } = engineOut;
+    // chạy Typing Engine
+    STATE.originalText = original;
+    const { caret, changed, newWord, isComplete } = runTypingEngine(currentText);
 
-    // Update spans theo danh sách changed
+    // Update changed spans
     for (const i of changed) {
         const span = spans[i];
         if (!span) continue;
@@ -84,65 +74,76 @@ export function handleInputEvent() {
         span.classList.remove("current", "correct", "incorrect");
 
         if (i < caret) {
-            // đã gõ tới
-            if (currentText[i] === original[i]) {
-                span.classList.add("correct");
-            } else {
-                span.classList.add("incorrect");
-            }
+            if (currentText[i] === original[i]) span.classList.add("correct");
+            else span.classList.add("incorrect");
 
             if (STATE.blindMode) span.classList.remove("blind-hidden");
         } else {
-            // chưa gõ
-            if (STATE.blindMode && i > caret) {
-                span.classList.add("blind-hidden");
-            }
+            if (STATE.blindMode && i > caret) span.classList.add("blind-hidden");
         }
     }
 
-    // caret span
+    // caret
     STATE.prevIndex = caret;
     if (spans[caret]) {
         spans[caret].classList.add("current");
         if (STATE.blindMode) spans[caret].classList.remove("blind-hidden");
+        if (DOM.autoTooltipToggle?.checked) showTooltipForSpan(spans[caret]);
+    }
 
-        if (DOM.autoTooltipToggle?.checked) {
-            showTooltipForSpan(spans[caret]);
+    // ⭐ FIX 2 — Ẩn toàn bộ ký tự sau caret (Blind Mode)
+    if (STATE.blindMode) {
+        for (let i = caret + 1; i < spans.length; i++) {
+            spans[i]?.classList.add("blind-hidden");
+        }
+    } else {
+        for (let i = caret + 1; i < spans.length; i++) {
+            spans[i]?.classList.remove("blind-hidden");
         }
     }
 
     // Stats
-    const len = currentText.length;
-    if (len > 0) {
+    if (currentText.length > 0) {
+        const last = currentText.length - 1;
         STATE.statTotalKeys++;
-        if (currentText[len - 1] === original[len - 1]) {
-            STATE.statCorrectKeys++;
-        } else {
-            STATE.statErrors++;
-        }
+        if (currentText[last] === original[last]) STATE.statCorrectKeys++;
+        else STATE.statErrors++;
         scheduleStatsUpdate();
     }
 
-    // Click sound
     if (DOM.soundToggle?.checked) playClick();
-
-    // Speak Word (gated bằng newWord)
     if (DOM.autoPronounceToggle?.checked && newWord) {
         checkNewWordAndSpeak(currentText, original);
     }
 
-    // Scroll
     throttleScrollToCurrent();
 
-    // Hoàn thành bài
+    // Segment logic
+    const segIdx = dict.currentSegmentIndex;
+    const seg = dict.segments[segIdx];
+    if (seg) {
+        const segStart = dict.charStarts[segIdx];
+        const segEnd = segStart + seg.cleanText.length;
+
+        if (caret >= segEnd) {
+            const next = segIdx + 1;
+            if (next < dict.segments.length) {
+                dict.currentSegmentIndex = next;
+                superPlayer.stop();
+                superPlayer.playSegment(
+                    dict.segments[next].audioStart,
+                    dict.segments[next].audioEnd
+                );
+            }
+        }
+    }
+
+    // Completed
     if (isComplete) {
         DOM.textInput.disabled = true;
         DOM.startBtn.disabled = false;
         DOM.startBtn.textContent = "Start";
         document.dispatchEvent(new CustomEvent("timer:stop"));
-
-        setTimeout(() => {
-            alert(`Hoàn thành! Độ chính xác: ${DOM.accuracyEl.textContent}`);
-        }, 80);
+        alert("🎉 Hoàn thành Dictation!");
     }
 }

@@ -1,36 +1,31 @@
 // ============================================================
-//  audio.js — Optimized version (keep full Speak Word logic)
+//  audio.js — AudioEngine PRO (Scheduler + Speak Word)
 // ============================================================
 
-import { DOM, STATE } from "./state.js";
-import { noop } from "./utils.js";
-// ===== LOCAL DICTATION STATE (không dùng state.js) =====
-let LOCAL_lastSpokenWord = "";
-let LOCAL_highestWordIndexReached = -1;
-// Tự quản lý trong audio.js — không đụng state.js
+import { STATE } from "./state.js";
+
+// Đảm bảo cache tồn tại
+if (!STATE.audioCache) {
+    STATE.audioCache = {};
+}
+
+// ===== LOCAL STATE cho Speak Word (chỉ dùng trong file này) =====
 let LOCAL_lastCaret = 0;
 let LOCAL_lastStart = -1;
 
+// ============================================================
+//  CLICK SOUND PACK — Web Audio API (siêu mượt)
+// ============================================================
 
-
-
-/* ---------------------------------------------------------
-    CLICK SOUND PACK — Web Audio API (siêu mượt)
---------------------------------------------------------- */
-
-// ===== CHỌN GÓI ÂM TẠI ĐÂY =====
-// "typewriter" | "mech_blue" | "mech_brown" | "laptop"
+// "typewriter" | "cream" | "mech_brown" | "alpaca"
 let CURRENT_CLICK_PACK = "cream";
 
-// ===== LINK FILE CHO TỪNG PACK =====
 const CLICK_PACK_URLS = {
     typewriter: "https://www.edclub.com/m/audio/typewriter.mp3",
-    cream : "https://raw.githubusercontent.com/tplai/kbsim/master/src/assets/audio/cream/release/GENERIC.mp3",
+    cream:      "https://raw.githubusercontent.com/tplai/kbsim/master/src/assets/audio/cream/release/GENERIC.mp3",
     mech_brown: "https://cdn.jsdelivr.net/gh/idmbull/soundfx/mech-brown.mp3",
-    alpaca    : "https://raw.githubusercontent.com/tplai/kbsim/master/src/assets/audio/alpaca/release/GENERIC.mp3"
+    alpaca:     "https://raw.githubusercontent.com/tplai/kbsim/master/src/assets/audio/alpaca/release/GENERIC.mp3"
 };
-
-// -----------------------------------------------------
 
 let clickCtx = null;
 let clickBuffer = null;
@@ -43,7 +38,6 @@ async function loadClickBuffer() {
 
     const resp = await fetch(url);
     const array = await resp.arrayBuffer();
-
     clickBuffer = await clickCtx.decodeAudioData(array);
 }
 
@@ -56,10 +50,6 @@ export async function playClick() {
         const source = clickCtx.createBufferSource();
         source.buffer = clickBuffer;
 
-        // RANDOM PITCH để tự nhiên hơn
-        // source.playbackRate.value = 0.92 + Math.random() * 0.16;
-
-        // Volume
         const gain = clickCtx.createGain();
         gain.gain.value = 5;
 
@@ -69,17 +59,23 @@ export async function playClick() {
 }
 
 
-/* ---------------------------------------------------------
-    WORD DETECTION (GIỮ NGUYÊN)
---------------------------------------------------------- */
+// ============================================================
+//  WORD TOKENIZATION (giống renderer, hỗ trợ 600,000 / 3.14 / 12-05-2025…)
+// ============================================================
+function splitWordsSample(text) {
+    return (text || "").match(/[a-z0-9]+(?:[,'./-][a-z0-9]+)*/gi) || [];
+}
+
 function getWordStartIndices(sample) {
-    const words = splitWordsSample(sample);
+    const src = sample || "";
+    const words = splitWordsSample(src);
     const starts = [];
     let searchIndex = 0;
 
     for (let w of words) {
-        const pos = sample.indexOf(w, searchIndex);
-        starts.push(pos);          // <<--- LƯU start index
+        const pos = src.indexOf(w, searchIndex);
+        if (pos === -1) continue;
+        starts.push(pos);
         searchIndex = pos + w.length;
     }
 
@@ -87,79 +83,33 @@ function getWordStartIndices(sample) {
 }
 
 
-// function splitWordsSample(text) {
-//     return text.match(/[a-z0-9'-]+/gi) || [];
-// }
+// ============================================================
+//  AUDIO HELPERS (sheet → Oxford → Cambridge → Youdao → GoogleTTS)
+// ============================================================
 
-function splitWordsSample(text) {
-    // Cho phép số dạng 600,000 ; 1.234.567 ; 12-05-2025 ; 2025/11/26 ; 3.14
-    return text.match(/[a-z0-9]+(?:[,'./-][a-z0-9]+)*/gi) || [];
-}
+const SHEET_ID = "1Nkbmb8eYhBXzuY4bfWdHToxR7mbRei39n36g6YlsrYw";
+const GID = "1105922470";
 
-function getWordBoundaries(sample) {
-    const words = splitWordsSample(sample);
-    const boundaries = [];
-
-    let searchIndex = 0;
-
-    for (let w of words) {
-        const pos = sample.indexOf(w, searchIndex);
-        const end = pos + w.length;
-        boundaries.push(end + 1);  // vị trí vượt qua từ hiện tại
-        searchIndex = end;
+async function fetchWordFromSheet(word) {
+    try {
+        const cleaned = String(word).toLowerCase().replace(/'/g, "_");
+        const q = encodeURIComponent(`select A,B where A = '${cleaned}'`);
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${q}&gid=${GID}`;
+        const resp = await fetch(url);
+        const text = await resp.text();
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        if (json.table.rows?.length > 0) {
+            const rawCell = json.table.rows[0].c[1]?.v || null;
+            if (!rawCell) return null;
+            return rawCell.split(/[,]\s*/).map(s => s.trim()).filter(Boolean);
+        }
+    } catch {
+        // ignore
     }
-
-    return { words, boundaries };
+    return null;
 }
 
-
-function isWordSeparator(c, prev = "", next = "") {
-    if (!c) return true;
-
-    // --- 1) Separator đặc biệt nằm GIỮA số (KHÔNG tách)
-    if (/[0-9]/.test(prev) && /[0-9]/.test(next) && /[.,\/-]/.test(c)) {
-        return false;
-    }
-
-    // --- 2) Sửa lỗi dấu ' đứng ngay trước từ (như 'There)
-    // Nếu: c === `'` AND next là chữ cái → KHÔNG coi là separator
-    if (c === "'" && /[a-z]/i.test(next)) {
-        return false;
-    }
-
-    // --- 3) Danh sách separator chuẩn (giữ nguyên)
-    return /[\s\n\t]|[.!?:;"(){}\[\],]/.test(c);
-}
-
-
-function isNewWordStarting(current, previous) {
-    const curLen = current.length;
-    const prevLen = previous.length;
-
-    // Không tăng độ dài → không phải gõ thêm
-    if (curLen <= prevLen) return false;
-
-    // Ký tự vừa gõ
-    const last = current[curLen - 1];
-
-    // Nếu ký tự mới KHÔNG phải chữ hoặc số → không phải từ mới
-    if (!/[a-z0-9]/i.test(last)) return false;
-
-    // Ký tự ngay trước trong CURRENT
-    const prevChar = current[curLen - 2] || "";
-
-    // Nếu ký tự trước đó là separator thật → bắt đầu từ mới
-    return isWordSeparator(
-        prevChar,
-        current[curLen - 3] || "",
-        last
-    );
-}
-
-/* ---------------------------------------------------------
-    FAST CHECK AUDIO EXISTS (tối ưu)
---------------------------------------------------------- */
-function checkAudioExists(url, timeout = 120) {
+function checkAudioExists(url, timeout = 600) {
     return new Promise(resolve => {
         try {
             const a = new Audio();
@@ -185,123 +135,177 @@ function checkAudioExists(url, timeout = 120) {
     });
 }
 
-/* ---------------------------------------------------------
-    PRELOAD (GIỮ NGUYÊN LOGIC, NHẸ HƠN)
---------------------------------------------------------- */
-async function preloadWord(word) {
-    if (!word) return;
-    if (STATE.audioCache[word]) return;
+function normalizeWord(raw) {
+    return (raw || "").trim().toLowerCase().replace(/['-]/g, "_");
+}
 
-    const cleaned = String(word).toLowerCase().replace(/['-]/g, "_");
+// Resolve nguồn audio cho một từ (trả về HTMLAudioElement hoặc null)
+async function resolveAudioFor(rawWord, cleaned) {
+    const key = cleaned || normalizeWord(rawWord);
+    if (!key) return null;
 
-    // sheet first
-    const sheetUrls = await fetchWordFromSheet(cleaned);
-    if (sheetUrls && sheetUrls.length) {
-        const u = sheetUrls[0];
-        if (await checkAudioExists(u, 120)) {
-            const a = new Audio(u);
-            STATE.audioCache[cleaned] = a;
-            return;
-        }
+    // 1) Cache
+    if (STATE.audioCache[key]) {
+        return STATE.audioCache[key];
     }
 
-    // Oxford/Cambridge/Youdao
     const baseCam = "https://dictionary.cambridge.org/media/english/us_pron/";
     const baseOxf = "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/";
     const baseYou = "https://dict.youdao.com/dictvoice?audio=";
-    const f1 = cleaned[0] || "_";
-    const f3 = cleaned.slice(0, 3).padEnd(3, "_");
-    const f5 = cleaned.slice(0, 5).padEnd(5, "_");
+    const baseTTS = "https://autumn-sound-09e5.idmbull.workers.dev/?lang=en&text=";
 
-    const oxford = cleaned.includes("_")
-        ? `${baseOxf}${f1}/${f3}/${f5}/${cleaned}_1_us_1.mp3`
-        : `${baseOxf}${f1}/${f3}/${f5}/${cleaned}__us_1.mp3`;
+    const f1 = key[0] || "_";
+    const f3 = key.slice(0, 3).padEnd(3, "_");
+    const f5 = key.slice(0, 5).padEnd(5, "_");
 
-    const cambridge = `${baseCam}${f1}/${f3}/${f5}/${cleaned}.mp3`;
-    const youdao = `${baseYou}${cleaned}`;
+    const oxfordUrl = key.includes("_")
+        ? `${baseOxf}${f1}/${f3}/${f5}/${key}_1_us_1.mp3`
+        : `${baseOxf}${f1}/${f3}/${f5}/${key}__us_1.mp3`;
 
-    const order = [oxford, cambridge, youdao];
+    const cambridgeUrl = `${baseCam}${f1}/${f3}/${f5}/${key}.mp3`;
+    const youdaoUrl = `${baseYou}${key}`;
+    const googleTTSUrl = `${baseTTS}${encodeURIComponent(rawWord || key)}`;
 
-    for (let u of order) {
-        if (await checkAudioExists(u, 120)) {
-            STATE.audioCache[cleaned] = new Audio(u);
-            return;
-        }
+    const urls = [];
+
+    // Sheet trước
+    const sheetUrls = await fetchWordFromSheet(key);
+    if (sheetUrls && sheetUrls.length) {
+        urls.push(...sheetUrls);
     }
+
+    urls.push(oxfordUrl, cambridgeUrl, youdaoUrl, googleTTSUrl);
+
+    for (const u of urls) {
+        if (!u) continue;
+        const ok = await checkAudioExists(u, 600);
+        if (!ok) continue;
+
+        const audio = new Audio(u);
+        STATE.audioCache[key] = audio;
+        return audio;
+    }
+
+    return null;
 }
 
-/* ---------------------------------------------------------
-    PRELOAD NEXT WORDS (logic giữ nguyên, bỏ xoá cache)
---------------------------------------------------------- */
+async function preloadWord(word) {
+    const cleaned = normalizeWord(word);
+    if (!cleaned) return;
+    if (STATE.audioCache[cleaned]) return;
+
+    await resolveAudioFor(word, cleaned);
+}
+
+// Preload vài từ tiếp theo quanh currentWord
 function preloadNextWords(originalText, currentWord, WIN = 3) {
+    if (!originalText || !currentWord) return;
     const words = (originalText.toLowerCase().match(/[a-z']+/g) || []);
-    const unique = [...new Set(words)];
+    const unique = Array.from(new Set(words));
     const idx = unique.indexOf(currentWord.toLowerCase());
     if (idx === -1) return;
 
     const nextWords = unique.slice(idx + 1, idx + 1 + WIN);
     nextWords.forEach(w => preloadWord(w));
-
-    // ❌ XOÁ BỎ xóa cache (nguyên nhân lag)
-    // => giữ nguyên cache, không ảnh hưởng logic speak word
 }
 
-/* ---------------------------------------------------------
-    checkNewWordAndSpeak (GIỮ NGUYÊN)
---------------------------------------------------------- */
 
-function getCurrentSampleWordIndex(sampleText, typedLength) {
-    const words = splitWordsSample(sampleText);
+// ============================================================
+//  AUDIO SCHEDULER — KHÔNG CHỒNG TIẾNG, HÀNG ĐỢI THÔNG MINH
+// ============================================================
 
-    let searchIndex = 0;
+const SPEAK_QUEUE = [];
+let SPEAK_PLAYING = false;
+let LAST_ENQUEUED = "";
 
-    for (let i = 0; i < words.length; i++) {
-        const w = words[i];
-        const pos = sampleText.indexOf(w, searchIndex);
-        if (pos === -1) continue;
+const MAX_QUEUE = 3;
 
-        const end = pos + w.length;
+function enqueueSpeak(rawWord) {
+    const cleaned = normalizeWord(rawWord);
+    if (!cleaned) return;
 
-        if (typedLength <= end) {
-            return { index: i, word: w };
-        }
+    // Không enqueue trùng ngay trước đó
+    if (cleaned === LAST_ENQUEUED) return;
+    LAST_ENQUEUED = cleaned;
 
-        searchIndex = end;
+    // Không cho từ đã nằm trong queue
+    if (SPEAK_QUEUE.some(item => item.cleaned === cleaned)) return;
+
+    SPEAK_QUEUE.push({ raw: rawWord, cleaned });
+
+    // Giới hạn backlog
+    if (SPEAK_QUEUE.length > MAX_QUEUE) {
+        SPEAK_QUEUE.splice(0, SPEAK_QUEUE.length - MAX_QUEUE);
     }
 
-    return { index: -1, word: null };
+    if (!SPEAK_PLAYING) {
+        void processSpeakQueue();
+    }
 }
 
-// export function checkNewWordAndSpeak(currentText, originalText) {
-//     const newWord = isNewWordStarting(currentText, STATE.prevInputText);
-//     STATE.prevInputText = currentText;
-//     if (!newWord) return;
-//     if (STATE.speakLock) return;
+async function processSpeakQueue() {
+    if (SPEAK_PLAYING) return;
+    const item = SPEAK_QUEUE.shift();
+    if (!item) return;
 
-//     STATE.speakLock = true;
-//     setTimeout(() => STATE.speakLock = false, 200);
+    SPEAK_PLAYING = true;
+    const { raw, cleaned } = item;
 
-//     const cursor = Math.max(0, currentText.length - 1);
+    let audio = STATE.audioCache[cleaned];
+    if (!audio) {
+        audio = await resolveAudioFor(raw, cleaned);
+    }
 
-//     let start = cursor;
-//     while (start > 0 && !isWordSeparator(originalText[start - 1])) start--;
+    if (!audio) {
+        SPEAK_PLAYING = false;
+        if (SPEAK_QUEUE.length) void processSpeakQueue();
+        return;
+    }
 
-//     let end = cursor;
-//     while (end < originalText.length - 1 && !isWordSeparator(originalText[end + 1])) end++;
+    try {
+        audio.currentTime = 0;
 
-//     const fullWord = originalText.substring(start, end + 1).trim();
-//     if (!fullWord || fullWord === STATE.lastSpokenWord) return;
+        audio.onended = () => {
+            audio.onended = null;
+            SPEAK_PLAYING = false;
+            if (SPEAK_QUEUE.length) void processSpeakQueue();
+        };
 
-//     const cleaned = fullWord.replace(/[^a-z0-9'-]/gi, "");
-//     STATE.lastSpokenWord = cleaned;
+        audio.onpause = () => {
+            audio.onpause = null;
+            SPEAK_PLAYING = false;
+            if (SPEAK_QUEUE.length) void processSpeakQueue();
+        };
 
-//     preloadNextWords(originalText, cleaned);
-//     playWord(cleaned).catch(noop);
-// }
+        await audio.play();
+    } catch {
+        SPEAK_PLAYING = false;
+        if (SPEAK_QUEUE.length) void processSpeakQueue();
+    }
+}
+
+
+// ============================================================
+//  PUBLIC API — checkNewWordAndSpeak + playWord
+// ============================================================
+
+/**
+ * 🔊 Hàm chính: được gọi từ input-handler.js
+ * - currentText: nội dung user đã gõ
+ * - originalText: toàn bộ text chuẩn (renderer đã chuẩn hoá)
+ *
+ * Logic:
+ *  - Xác định caret đang ở trong từ nào
+ *  - Chặn backspace
+ *  - Chỉ phát khi caret vừa bước vào vị trí start+1 của từ mới
+ *  - Preload vài từ tiếp theo
+ *  - Đưa từ vào AudioScheduler (enqueueSpeak)
+ */
 export function checkNewWordAndSpeak(currentText, originalText) {
+    const sample = originalText || "";
     const caret = currentText.length;
 
-    const { words, starts } = getWordStartIndices(originalText);
+    const { words, starts } = getWordStartIndices(sample);
 
     // 1) Xác định caret đang nằm trong từ nào
     let currentIndex = -1;
@@ -309,7 +313,6 @@ export function checkNewWordAndSpeak(currentText, originalText) {
         const start = starts[i];
         const end = start + words[i].length;
 
-        // Phạm vi từ: (start+1 ... end)
         if (caret > start && caret <= end) {
             currentIndex = i;
             break;
@@ -324,130 +327,31 @@ export function checkNewWordAndSpeak(currentText, originalText) {
     const startNow = starts[currentIndex];
     const currentWord = words[currentIndex];
 
-    // 2) CHẶN BACKSPACE (caret giảm)
+    // 2) CHẶN BACKSPACE (caret lùi)
     const isDeleting = caret < LOCAL_lastCaret;
-
     if (isDeleting) {
-        // Lùi → không phát
         LOCAL_lastCaret = caret;
         return;
     }
 
-    // 3) CHỈ PHÁT KHI TIẾN VÀO START MỚI (caret tăng)
+    // 3) CHỈ PHÁT KHI caret VỪA BƯỚC VÀO START+1 CỦA TỪ
     if (startNow !== LOCAL_lastStart && caret === startNow + 1) {
-        // caret vừa bước vào đầu từ → phát
         LOCAL_lastStart = startNow;
 
-        preloadNextWords(originalText, currentWord);
-        playWord(currentWord).catch(() => {});
+        // Preload một số từ tiếp theo
+        preloadNextWords(sample, currentWord);
+
+        // Đưa vào scheduler (không phát trực tiếp)
+        enqueueSpeak(currentWord);
     }
 
     LOCAL_lastCaret = caret;
 }
 
-
-
-
-
-/* ---------------------------------------------------------
-    fetchWordFromSheet (NGUYÊN BẢN)
---------------------------------------------------------- */
-async function fetchWordFromSheet(word) {
-    const SHEET_ID = "1Nkbmb8eYhBXzuY4bfWdHToxR7mbRei39n36g6YlsrYw";
-    const GID = "1105922470";
-    try {
-        const q = encodeURIComponent(`select A,B where A = '${word.replace(/'/g, "_")}'`);
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=${q}&gid=${GID}`;
-        const resp = await fetch(url);
-        const text = await resp.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        if (json.table.rows?.length > 0) {
-            const rawCell = json.table.rows[0].c[1]?.v || null;
-            if (!rawCell) return null;
-            return rawCell.split(/[,;]\s*/).map(s => s.trim()).filter(Boolean);
-        }
-    } catch { }
-    return null;
-}
-
-/* ---------------------------------------------------------
-    tryPlayUrl (tối ưu timeout 500ms)
---------------------------------------------------------- */
-function tryPlayUrl(url, timeoutMs = 500) {
-    return new Promise(resolve => {
-        const audio = new Audio(url);
-        let done = false;
-
-        const finish = ok => {
-            if (done) return;
-            done = true;
-            clearTimeout(t);
-            resolve(ok);
-        };
-
-        audio.oncanplay = () => {
-            audio.play()
-                .then(() => finish(true))
-                .catch(() => finish(false));
-        };
-
-        audio.onerror = () => finish(false);
-
-        const t = setTimeout(() => finish(false), timeoutMs);
-        audio.load();
-    });
-}
-
-/* ---------------------------------------------------------
-    playWord (GIỮ NGUYÊN LOGIC, nhanh hơn)
---------------------------------------------------------- */
+/**
+ * Giữ export playWord để tương thích, nhưng bên trong chỉ enqueue.
+ * Nếu ở đâu đó gọi trực tiếp playWord("hello"), vẫn được xếp hàng phát.
+ */
 export async function playWord(raw) {
-    const word = (raw || "").trim().toLowerCase().replace(/['-]/g, "_");
-    if (!word) return;
-    console.log("\n[AUDIO] speak:", word);
-    // cache first
-    const cached = STATE.audioCache[word];
-    if (cached) {
-        try {
-            cached.currentTime = 0;
-            await cached.play();
-            return;
-        } catch { }
-    }
-
-    // fallback order: sheet -> oxford -> cambridge -> youdao -> google
-    const sheetUrls = await fetchWordFromSheet(word);
-    const baseCam = "https://dictionary.cambridge.org/media/english/us_pron/";
-    const baseOxf = "https://www.oxfordlearnersdictionaries.com/media/english/us_pron/";
-    const baseYou = "https://dict.youdao.com/dictvoice?audio=";
-    const baseTTS = "https://autumn-sound-09e5.idmbull.workers.dev/?lang=en&text=";
-
-    const f1 = word[0] || "_";
-    const f3 = word.slice(0, 3).padEnd(3, "_");
-    const f5 = word.slice(0, 5).padEnd(5, "_");
-
-    const oxfordUrl = word.includes("_")
-        ? `${baseOxf}${f1}/${f3}/${f5}/${word}_1_us_1.mp3`
-        : `${baseOxf}${f1}/${f3}/${f5}/${word}__us_1.mp3`;
-
-    const cambridgeUrl = `${baseCam}${f1}/${f3}/${f5}/${word}.mp3`;
-    const youdaoUrl = `${baseYou}${word}`;
-    const googleTTSUrl = `${baseTTS}${encodeURIComponent(raw)}`;
-
-    const order = [
-        ...(sheetUrls || []),
-        oxfordUrl,
-        cambridgeUrl,
-        youdaoUrl,
-        googleTTSUrl
-    ];
-
-    const skip = cached?.src;
-    for (let url of order) {
-        if (skip && url === skip) continue;
-        if (await tryPlayUrl(url)) {
-            STATE.audioCache[word] = new Audio(url);
-            return;
-        }
-    }
+    enqueueSpeak(raw);
 }

@@ -3,6 +3,30 @@ import { DOM, STATE } from "./state.js";
 import { wrapChars, convertInlineFootnotes, convertMarkdownToPlain } from "./utils.js";
 
 /**
+ * Precompute word tokens & boundaries for Speak Word
+ * Dùng regex giống bên audio (hỗ trợ số như 600,000 / 3.14 / 12-05-2025)
+ */
+function computeWordMetadata() {
+    const text = STATE.originalText || "";
+    const tokens = [];
+    const starts = [];
+    const ends = [];
+
+    // 600,000 — 3.14 — 12-05-2025 — 2025/11/26 — word-word
+    const re = /[a-z0-9]+(?:[,'./-][a-z0-9]+)*/gi;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        tokens.push(m[0]);
+        starts.push(m.index);
+        ends.push(m.index + m[0].length);
+    }
+
+    STATE.wordTokens = tokens;
+    STATE.wordStarts = starts;
+    STATE.wordEnds = ends;
+}
+
+/**
  * Render text và xử lý Blind Mode ban đầu
  */
 export function displayText(rawText) {
@@ -13,8 +37,12 @@ export function displayText(rawText) {
     DOM.textDisplay.innerHTML = marked.parse(withFootnotes);
 
     // 3) Chuẩn hóa text gốc để so sánh khi gõ
+    //    (giống bản gốc: bỏ footnote rồi convert markdown → plain)
     const noFootnotes = rawText.replace(/\^\[(.*?)\]/g, "");
     STATE.originalText = convertMarkdownToPlain(noFootnotes);
+
+    // 3.5) ⭐ Precompute word boundaries cho Speak Word
+    computeWordMetadata();
 
     // 4) Text Node → Spans
     const walker = document.createTreeWalker(DOM.textDisplay, NodeFilter.SHOW_TEXT);
@@ -51,16 +79,16 @@ export function displayText(rawText) {
     allSpanCandidates.forEach(s => s.classList.remove("current", "correct", "incorrect"));
 
     if (STATE.textSpans[0]) STATE.textSpans[0].classList.add("current");
-    
+
     // ⭐ APPLY BLIND MODE INITIALLY
     applyBlindMode(0);
 
     // 7) Tooltip events
-    DOM.textDisplay.querySelectorAll('.tooltip-word').forEach(el => {
-        el.addEventListener('mouseenter', () => {
+    DOM.textDisplay.querySelectorAll(".tooltip-word").forEach(el => {
+        el.addEventListener("mouseenter", () => {
             document.dispatchEvent(new CustomEvent("tooltip:show", { detail: el }));
         });
-        el.addEventListener('mouseleave', () => {
+        el.addEventListener("mouseleave", () => {
             document.dispatchEvent(new Event("tooltip:hide"));
         });
     });
@@ -73,38 +101,17 @@ export function displayText(rawText) {
 export function applyBlindMode(currentIndex) {
     const isBlind = STATE.blindMode;
     const spans = STATE.textSpans;
-    
-    // Nếu không phải Blind Mode, gỡ class ẩn hết
+
     if (!isBlind) {
         spans.forEach(s => s.classList.remove("blind-hidden"));
         return;
     }
 
-    // Tối ưu: Chỉ loop một lần hoặc dùng logic thông minh
-    // Ở đây ta dùng vòng lặp đơn giản: Index < currentIndex => Hiện, còn lại => Ẩn
-    // Tuy nhiên, để tối ưu khi gõ (incremental update), hàm này chỉ gọi khi Init hoặc Toggle
+    // Blind Mode:
+    //  - Index <= currentIndex → hiện
+    //  - Index >  currentIndex → ẩn
     for (let i = 0; i < spans.length; i++) {
-        if (i < currentIndex) { 
-            spans[i].classList.remove("blind-hidden"); // Đã gõ xong
-        } else if (i === currentIndex) {
-             // Ký tự đang gõ: Ẩn hay hiện tùy sở thích.
-             // Dictation gốc: Hiện ký tự đang gõ (để biết mình đang gõ gì nếu sai).
-             // Nhưng Blind Mode đúng nghĩa thường ẩn tất cả chưa gõ đúng.
-             // Theo logic cũ: span.classList.remove("blind-hidden") nếu i <= caretIndex
-             spans[i].classList.remove("blind-hidden"); 
-        } else {
-            spans[i].classList.add("blind-hidden"); // Chưa gõ
-        }
+        if (i <= currentIndex) spans[i].classList.remove("blind-hidden");
+        else spans[i].classList.add("blind-hidden");
     }
-}
-
-export function scrollToCaret() {
-    const caret = document.querySelector(".char.current");
-    const container = DOM.textContainer;
-    if (!caret || !container) return;
-    
-    // Logic cuộn đơn giản hơn ở đây, logic phức tạp đã có trong input-handler
-    const caretTop = caret.offsetTop;
-    const containerMid = container.clientHeight / 2;
-    container.scrollTo({ top: caretTop - containerMid, behavior: 'smooth' });
 }
