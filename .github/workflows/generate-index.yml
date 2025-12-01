@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # IMPORTANT: needed for pushing commits
 
       - name: DEBUG – Show repo structure
         run: |
@@ -32,7 +34,7 @@ jobs:
             find ./texts/dictation -type f -iname "*.md"
           ) | sort -V | while IFS= read -r f; do
               fname=$(basename "$f")
-              if [ "$first" = true ];then
+              if [ "$first" = true ]; then
                   printf '  \"%s\"\n' "$fname" >> dictation.json
                   first=false
               else
@@ -60,9 +62,15 @@ jobs:
           echo "]" >> index.json
 
       - name: Commit JSON outputs
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update index.json & dictation.json"
-          file_pattern: |
-            dictation.json
-            index.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add dictation.json index.json
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Auto-update index.json & dictation.json"
+            git push origin main
+          fi
