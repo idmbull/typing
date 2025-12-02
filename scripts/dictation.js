@@ -9,9 +9,11 @@ const superPlayer = new SuperAudioPlayer();
    HELPERS
 ============================================================ */
 function cleanDictationText(text) {
-    return text.replace(/&nbsp;/gi, " ")
+    return text
+        .replace(/&nbsp;/gi, " ")
         .replace(/\u00A0/g, " ")
         .replace(/[‘’]/g, "'")
+        .replace(/[“”]/g, "\"")
         .replace(/[—–]/g, "-")
         .replace(/\u200B/g, "");
 }

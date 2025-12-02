@@ -1,11 +1,12 @@
 // ================================
-// dictation-app.js — Bản đã vá
+// dictation-app.js — Bản đã vá (Fix Timer)
 // ================================
 
 import { DOM, STATE, resetState } from "./state.js";
-import { updateStatsDOMImmediate } from "./stats.js";
+// [FIX] Import thêm startTimer và stopTimer
+import { updateStatsDOMImmediate, startTimer, stopTimer } from "./stats.js";
 import { displayText } from "./renderer.js";
-import { setTheme, initTheme } from "./theme.js";
+import { initTheme } from "./theme.js";
 import { SuperAudioPlayer } from "./superAudioPlayer.js";
 import {
     loadDictationPlaylist,
@@ -97,7 +98,6 @@ async function loadCurrentDictation() {
     }
 
     // Render text
-    // Render text
     displayText(fullTextRaw);
 
     // ⭐ FIX QUAN TRỌNG — giống Typing Mode
@@ -151,6 +151,7 @@ function startDictation() {
     DOM.startBtn.textContent = "Typing...";
     DOM.startBtn.disabled = true;
 
+    // Phát sự kiện bắt đầu timer
     document.dispatchEvent(new CustomEvent("timer:start"));
 
     STATE.dictation.currentSegmentIndex = 0;
@@ -161,6 +162,7 @@ function startDictation() {
    RESET
 ============================================================ */
 function resetDictation() {
+    // Phát sự kiện dừng timer
     document.dispatchEvent(new CustomEvent("timer:stop"));
     loadCurrentDictation();
 }
@@ -177,10 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Fix Volume: Gắn sự kiện cho thanh trượt
     const volInput = document.getElementById("dictationVolume");
     if (volInput) {
-        // Set âm lượng ban đầu theo giá trị HTML (2.5)
         superPlayer.setVolume(parseFloat(volInput.value));
-
-        // Lắng nghe khi kéo thanh trượt
         volInput.addEventListener("input", (e) => {
             superPlayer.setVolume(parseFloat(e.target.value));
         });
@@ -198,16 +197,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Blind Mode toggle
     DOM.blindModeToggle?.addEventListener("change", (e) => {
         STATE.blindMode = e.target.checked;
-
         if (STATE.blindMode) {
             document.body.classList.add("blind-mode");
         } else {
             document.body.classList.remove("blind-mode");
         }
-
         applyDictationBlindMode();
     });
-
 
     // Hotkey Ctrl+B
     document.addEventListener("keydown", (e) => {
@@ -232,16 +228,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (STATE.mode !== "dictation") return;
         if (e.ctrlKey && e.code === "Space") {
             e.preventDefault();
-
             const idx = STATE.dictation.currentSegmentIndex;
             const seg = STATE.dictation.segments[idx];
             if (!seg) return;
-
             superPlayer.stop();
             superPlayer.playSegment(seg.audioStart, seg.audioEnd);
         }
     });
-
 
     // Fix mất focus
     DOM.textInput.addEventListener("blur", () => {
@@ -249,4 +242,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             setTimeout(() => DOM.textInput.focus(), 50);
         }
     });
+
+    // [FIX] LẮNG NGHE SỰ KIỆN TIMER ĐỂ CHẠY ĐỒNG HỒ
+    document.addEventListener("timer:start", startTimer);
+    document.addEventListener("timer:stop", stopTimer);
 });
