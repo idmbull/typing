@@ -63,7 +63,7 @@ export async function playClick() {
 //  WORD TOKENIZATION (giống renderer, hỗ trợ 600,000 / 3.14 / 12-05-2025…)
 // ============================================================
 function splitWordsSample(text) {
-    return (text || "").match(/[a-z0-9%]+(?:[,'./-][a-z0-9]+)*/gi) || [];
+    return (text || "").match(/[a-z0-9%]+(?:[,'./-][a-z0-9%]+)*/gi) || [];
 }
 
 function getWordStartIndices(sample) {
@@ -355,4 +355,5 @@ export function checkNewWordAndSpeak(currentText, originalText) {
 export async function playWord(raw) {
     enqueueSpeak(raw);
 }
+
 
