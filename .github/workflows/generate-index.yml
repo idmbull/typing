@@ -34,6 +34,7 @@ jobs:
           first=true
 
           git ls-files --others --cached --exclude-standard texts/dictation \
+          | grep -E '\.(txt|md)$' \
           | while read -r f; do
               ts=$(git log -1 --format="%ct" -- "$f" 2>/dev/null || echo 0)
               printf "%s\t%s\n" "$ts" "$f"
@@ -62,6 +63,7 @@ jobs:
           first=true
 
           git ls-files --others --cached --exclude-standard texts/typing \
+          | grep -E '\.(txt|md)$' \
           | while read -r f; do
               ts=$(git log -1 --format="%ct" -- "$f" 2>/dev/null || echo 0)
               printf "%s\t%s\n" "$ts" "$f"
