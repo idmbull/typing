@@ -2,63 +2,99 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Audacity Label Merger</title>
+<title>Audacity Label + Dialogue Merger</title>
 <style>
     body {
-        font-family: Arial;
+        font-family: Arial, sans-serif;
         background: #1e1e1e;
-        color: #fff;
+        color: #f5f5f5;
         padding: 20px;
+        line-height: 1.5;
     }
-    h2 { margin-top: 40px; }
+    h1 {
+        margin-bottom: 10px;
+    }
+    p {
+        color: #ccc;
+        font-size: 14px;
+    }
     .dropzone {
-        border: 2px dashed #888;
-        padding: 30px;
+        border: 2px dashed #666;
+        padding: 25px;
         text-align: center;
-        margin-bottom: 20px;
-        background: #2c2c2c;
+        margin: 15px 0;
+        background: #2b2b2b;
         cursor: pointer;
+        border-radius: 8px;
+        transition: 0.2s;
     }
     .dropzone.dragover {
         border-color: #4caf50;
         background: #333;
+    }
+    .dropzone b {
+        color: #fff;
+    }
+    button {
+        padding: 10px 18px;
+        font-size: 15px;
+        cursor: pointer;
+        background: #4caf50;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        margin-top: 10px;
+    }
+    button:disabled {
+        background: #555;
+        cursor: not-allowed;
     }
     #output {
         margin-top: 20px;
         white-space: pre-wrap;
         background: #111;
         padding: 10px;
+        border-radius: 6px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 13px;
     }
-    button {
-        padding: 12px 20px;
-        font-size: 16px;
-        cursor: pointer;
-        background: #4caf50;
-        border: none;
-        color: white;
-        margin-top: 10px;
+    .status {
+        font-size: 13px;
+        margin-top: 5px;
+        color: #aaa;
     }
 </style>
 </head>
 <body>
 
 <h1>Audacity Timestamp + Dialogue Merger</h1>
+<p>
+    1) Kéo thả <b>Labels.txt</b> (Audacity, không dòng trống).<br>
+    2) Kéo thả <b>Dialogue.txt</b> (có thể có dòng trống).<br>
+    3) Bấm <b>Merge</b> để tải xuống <code>final.txt</code>.<br>
+    Dòng trống trong <code>Dialogue.txt</code> sẽ được giữ lại đúng vị trí.
+</p>
 
 <div id="labelDrop" class="dropzone">
-    Drop <b>Labels.txt</b> here
+    Thả <b>Labels.txt</b> (Audacity) vào đây
+    <div id="labelStatus" class="status">Chưa có file</div>
 </div>
 
 <div id="dialogDrop" class="dropzone">
-    Drop <b>Dialogue.txt</b> here
+    Thả <b>Dialogue.txt</b> vào đây
+    <div id="dialogStatus" class="status">Chưa có file</div>
 </div>
 
-<button id="mergeBtn" disabled>Merge and Download final.txt</button>
+<button id="mergeBtn" disabled>Merge &amp; Download final.txt</button>
 
-<pre id="output"></pre>
+<pre id="output" placeholder="Preview output..."></pre>
 
 <script>
-let labels = [];
-let dialogues = [];
+let labels = [];         // {start, end}
+let dialogues = [];      // tất cả dòng (kể cả trống)
+let cleanDialogue = [];  // chỉ các dòng có chữ
+let emptyLines = [];     // index dòng trống
 
 // -----------------------
 // File Reader Helper
@@ -74,8 +110,9 @@ function readFileAsync(file) {
 // -----------------------
 // Dropzone setup
 // -----------------------
-function setupDropzone(id, callback) {
+function setupDropzone(id, statusId, callback) {
     const zone = document.getElementById(id);
+    const status = document.getElementById(statusId);
 
     zone.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -91,16 +128,24 @@ function setupDropzone(id, callback) {
         zone.classList.remove("dragover");
 
         const file = e.dataTransfer.files[0];
+        if (!file) return;
+
         const text = await readFileAsync(file);
         callback(text);
 
-        zone.innerHTML = `<b>${file.name}</b> loaded ✔`;
+        zone.innerHTML = zone.innerHTML.split("<div")[0]; // giữ text chính
+        zone.insertAdjacentHTML(
+            "beforeend",
+            `<div id="${statusId}" class="status"><b>${file.name}</b> loaded ✔</div>`
+        );
+
         enableMergeIfReady();
     });
 }
 
 // -----------------------
 // Parse Audacity label file
+// Format: start[tab/space]end[tab/space]optional label
 // -----------------------
 function parseLabels(text) {
     labels = text
@@ -118,35 +163,63 @@ function parseLabels(text) {
 }
 
 // -----------------------
-// Parse dialogue file
+// Parse dialogue file (KEEP EMPTY LINES POSITION)
 // -----------------------
 function parseDialogue(text) {
-    dialogues = text
-        .split(/\r?\n/)
-        .filter(line => line.trim().length > 0);
+    const lines = text.split(/\r?\n/);
 
-    console.log("Parsed dialogues:", dialogues);
+    dialogues = lines;
+    cleanDialogue = [];
+    emptyLines = [];
+
+    lines.forEach((line, index) => {
+        if (line.trim() === "") {
+            emptyLines.push(index);          // lưu index dòng trống
+        } else {
+            cleanDialogue.push(line);        // chỉ lấy câu có chữ
+        }
+    });
+
+    console.log("Dialogue lines (raw):", dialogues);
+    console.log("Clean dialogue:", cleanDialogue);
+    console.log("Empty line indexes:", emptyLines);
 }
 
 // -----------------------
 // Enable merge if ready
 // -----------------------
 function enableMergeIfReady() {
-    if (labels.length > 0 && dialogues.length > 0) {
-        document.getElementById("mergeBtn").disabled = false;
+    const btn = document.getElementById("mergeBtn");
+    if (labels.length > 0 && cleanDialogue.length > 0) {
+        btn.disabled = false;
     }
 }
 
 // -----------------------
-// Merge logic
+// Merge logic WITH EMPTY LINE RESTORE
 // -----------------------
 function mergeFiles() {
-    const n = Math.min(labels.length, dialogues.length);
-    let out = "";
+    let merged = [];
 
-    for (let i = 0; i < n; i++) {
-        out += `${labels[i].start}\t${labels[i].end}\t${dialogues[i]}\n`;
+    const count = Math.min(labels.length, cleanDialogue.length);
+
+    // Bước 1 — ghép timestamp + các câu có chữ (bỏ dòng trống)
+    for (let i = 0; i < count; i++) {
+        merged.push(`${labels[i].start}\t${labels[i].end}\t${cleanDialogue[i]}`);
     }
+
+    // Bước 2 — chèn lại các dòng trống đúng vị trí dựa trên index của Dialogue.txt gốc
+    emptyLines.forEach(idx => {
+        // Giới hạn: chỉ chèn nếu idx <= độ dài hiện tại (tránh nhảy quá xa)
+        if (idx <= merged.length) {
+            merged.splice(idx, 0, "");
+        } else {
+            // nếu index lớn hơn độ dài hiện tại, thêm dòng trống vào cuối
+            merged.push("");
+        }
+    });
+
+    const out = merged.join("\n");
 
     document.getElementById("output").textContent = out;
     downloadFile(out, "final.txt");
@@ -170,10 +243,9 @@ function downloadFile(data, filename) {
 // -----------------------
 // Init
 // -----------------------
-setupDropzone("labelDrop", parseLabels);
-setupDropzone("dialogDrop", parseDialogue);
+setupDropzone("labelDrop", "labelStatus", parseLabels);
+setupDropzone("dialogDrop", "dialogStatus", parseDialogue);
 document.getElementById("mergeBtn").onclick = mergeFiles;
-
 </script>
 </body>
 </html>
