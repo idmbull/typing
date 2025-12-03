@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Audacity Label Merger</title>
+<style>
+    body {
+        font-family: Arial;
+        background: #1e1e1e;
+        color: #fff;
+        padding: 20px;
+    }
+    h2 { margin-top: 40px; }
+    .dropzone {
+        border: 2px dashed #888;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 20px;
+        background: #2c2c2c;
+        cursor: pointer;
+    }
+    .dropzone.dragover {
+        border-color: #4caf50;
+        background: #333;
+    }
+    #output {
+        margin-top: 20px;
+        white-space: pre-wrap;
+        background: #111;
+        padding: 10px;
+    }
+    button {
+        padding: 12px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        background: #4caf50;
+        border: none;
+        color: white;
+        margin-top: 10px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Audacity Timestamp + Dialogue Merger</h1>
+
+<div id="labelDrop" class="dropzone">
+    Drop <b>Labels.txt</b> here
+</div>
+
+<div id="dialogDrop" class="dropzone">
+    Drop <b>Dialogue.txt</b> here
+</div>
+
+<button id="mergeBtn" disabled>Merge and Download final.txt</button>
+
+<pre id="output"></pre>
+
+<script>
+let labels = [];
+let dialogues = [];
+
+// -----------------------
+// File Reader Helper
+// -----------------------
+function readFileAsync(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsText(file);
+    });
+}
+
+// -----------------------
+// Dropzone setup
+// -----------------------
+function setupDropzone(id, callback) {
+    const zone = document.getElementById(id);
+
+    zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        zone.classList.add("dragover");
+    });
+
+    zone.addEventListener("dragleave", () => {
+        zone.classList.remove("dragover");
+    });
+
+    zone.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        zone.classList.remove("dragover");
+
+        const file = e.dataTransfer.files[0];
+        const text = await readFileAsync(file);
+        callback(text);
+
+        zone.innerHTML = `<b>${file.name}</b> loaded ✔`;
+        enableMergeIfReady();
+    });
+}
+
+// -----------------------
+// Parse Audacity label file
+// -----------------------
+function parseLabels(text) {
+    labels = text
+        .split(/\r?\n/)
+        .filter(line => line.trim().length > 0)
+        .map(line => {
+            const parts = line.trim().split(/\s+/);
+            return {
+                start: parts[0],
+                end: parts[1]
+            };
+        });
+
+    console.log("Parsed labels:", labels);
+}
+
+// -----------------------
+// Parse dialogue file
+// -----------------------
+function parseDialogue(text) {
+    dialogues = text
+        .split(/\r?\n/)
+        .filter(line => line.trim().length > 0);
+
+    console.log("Parsed dialogues:", dialogues);
+}
+
+// -----------------------
+// Enable merge if ready
+// -----------------------
+function enableMergeIfReady() {
+    if (labels.length > 0 && dialogues.length > 0) {
+        document.getElementById("mergeBtn").disabled = false;
+    }
+}
+
+// -----------------------
+// Merge logic
+// -----------------------
+function mergeFiles() {
+    const n = Math.min(labels.length, dialogues.length);
+    let out = "";
+
+    for (let i = 0; i < n; i++) {
+        out += `${labels[i].start}\t${labels[i].end}\t${dialogues[i]}\n`;
+    }
+
+    document.getElementById("output").textContent = out;
+    downloadFile(out, "final.txt");
+}
+
+// -----------------------
+// Download helper
+// -----------------------
+function downloadFile(data, filename) {
+    const blob = new Blob([data], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+// -----------------------
+// Init
+// -----------------------
+setupDropzone("labelDrop", parseLabels);
+setupDropzone("dialogDrop", parseDialogue);
+document.getElementById("mergeBtn").onclick = mergeFiles;
+
+</script>
+</body>
+</html>
