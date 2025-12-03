@@ -1,4 +1,5 @@
-// /scripts/dictation.js (FIXED VERSION)
+// scripts/dictation.js
+
 import { DOM, STATE, resetState } from "./state.js";
 import { displayText } from "./renderer.js";
 import { SuperAudioPlayer } from "./superAudioPlayer.js";
@@ -23,21 +24,48 @@ function stripDictationMarkup(raw) {
         .replace(/\*\*(.+?)\*\*/g, "$1") : "";
 }
 
+// [UPDATE]: Parse có xử lý dòng trống
 function parseTSV(content) {
-    return content.split(/\r?\n/).map(line => {
-        const parts = line.trim().split("\t");
-        if (parts.length >= 3)
-            return { audioStart: parseFloat(parts[0]), audioEnd: parseFloat(parts[1]), text: parts.slice(2).join("\t").trim() };
+    const lines = content.split(/\r?\n/);
+    const results = [];
+    let isNewParagraph = false;
 
-        const m = line.match(/^([\d.]+)\s+([\d.]+)\s+(.*)$/);
-        return m ? {
-            audioStart: parseFloat(m[1]),
-            audioEnd: parseFloat(m[2]),
-            text: m[3].trim()
-        } : null;
-    }).filter(Boolean);
+    for (const line of lines) {
+        if (!line.trim()) {
+            isNewParagraph = true;
+            continue;
+        }
+
+        let seg = null;
+        const parts = line.trim().split("\t");
+
+        if (parts.length >= 3) {
+            seg = { 
+                audioStart: parseFloat(parts[0]), 
+                audioEnd: parseFloat(parts[1]), 
+                text: parts.slice(2).join("\t").trim() 
+            };
+        } else {
+            const m = line.match(/^([\d.]+)\s+([\d.]+)\s+(.*)$/);
+            if (m) {
+                seg = {
+                    audioStart: parseFloat(m[1]),
+                    audioEnd: parseFloat(m[2]),
+                    text: m[3].trim()
+                };
+            }
+        }
+
+        if (seg) {
+            seg.isNewParagraph = isNewParagraph;
+            results.push(seg);
+            isNewParagraph = false; // Reset sau khi gán
+        }
+    }
+    return results;
 }
 
+// [UPDATE]: Build text xử lý \n\n cho hiển thị
 function buildDictationText() {
     const dict = STATE.dictation;
 
@@ -46,13 +74,30 @@ function buildDictationText() {
     dict.charStarts = [];
 
     let pos = 0;
+    
     dict.segments.forEach((seg, idx) => {
         const clean = stripDictationMarkup(seg.text);
         seg.cleanText = clean;
+
+        let sepRaw = " ";
+        let sepClean = " ";
+
+        if (idx > 0) {
+            if (seg.isNewParagraph) {
+                sepRaw = "\n\n";
+            }
+        } else {
+            sepRaw = "";
+            sepClean = "";
+        }
+        
+        // Cộng separator vào pos để tính charStart chính xác trên chuỗi Clean
+        if (idx > 0) pos += sepClean.length;
+        
         dict.charStarts[idx] = pos;
 
-        dict.fullText += clean + (idx < dict.segments.length - 1 ? " " : "");
-        dict.fullTextRaw += seg.text + (idx < dict.segments.length - 1 ? " " : "");
+        dict.fullTextRaw += sepRaw + seg.text;
+        dict.fullText += sepClean + clean;
 
         pos = dict.fullText.length;
     });
@@ -94,7 +139,6 @@ export function initDictation() {
     DOM.dictationSubInput.addEventListener("change", readyCheck);
     DOM.dictationAudioInput.addEventListener("change", readyCheck);
 
-    // sync blind mode
     dictationBlindMode.addEventListener("change", (e) => {
         STATE.blindMode = e.target.checked;
         DOM.blindModeToggle.checked = STATE.blindMode;
@@ -104,12 +148,10 @@ export function initDictation() {
         dictationBlindMode.checked = e.target.checked;
     });
 
-    // Replay button
     DOM.dictationReplayBtn.addEventListener("click", () => {
         playSegment(STATE.dictation.currentSegmentIndex);
     });
 
-    // Volume
     const vol = document.getElementById("dictationVolume");
     if (vol) {
         vol.addEventListener("input", () =>
@@ -117,21 +159,17 @@ export function initDictation() {
         );
     }
 
-    /* ========================================================
-       START DICTATION
-    ======================================================== */
     dictationStartBtn.addEventListener("click", async () => {
         const subFile = DOM.dictationSubInput.files[0];
         const audioFile = DOM.dictationAudioInput.files[0];
         if (!subFile || !audioFile) return;
 
-        // Set blind mode
         STATE.blindMode = dictationBlindMode.checked;
         DOM.blindModeToggle.checked = STATE.blindMode;
 
-        // Load subtitles
         const reader = new FileReader();
         reader.onload = async (e) => {
+            // Parse segments với logic mới (giữ dòng trống)
             const segments = parseTSV(cleanDictationText(e.target.result));
             if (!segments.length) return alert("File lời thoại bị lỗi!");
 
@@ -139,10 +177,8 @@ export function initDictation() {
             STATE.dictation.currentSegmentIndex = 0;
             STATE.dictation.active = true;
 
-            // Load audio
             await superPlayer.load(await audioFile.arrayBuffer());
 
-            // Build full text
             buildDictationText();
 
             dictationModal.classList.add("hidden");
@@ -150,28 +186,22 @@ export function initDictation() {
             STATE.mode = "dictation";
             resetState();
 
-            // render text
+            // Render sẽ tự động hiểu \n\n là thẻ <p> nhờ marked.js
             displayText(STATE.dictation.fullTextRaw);
 
             DOM.textInput.value = "";
-            DOM.textInput.disabled = true;  // chờ user bấm Start
+            DOM.textInput.disabled = true;
             DOM.startBtn.disabled = false;
             DOM.startBtn.textContent = "Start";
 
             document.querySelector("header h1").textContent = subFile.name;
-
         };
 
         reader.readAsText(subFile, "utf-8");
     });
 
-    /* ========================================================
-       🔥 Nhận event từ Input Engine
-       Khi segment finished → play segment mới
-    ======================================================== */
     document.addEventListener("dictation:segmentDone", (e) => {
         const next = e.detail + 1;
-
         if (next < STATE.dictation.segments.length) {
             STATE.dictation.currentSegmentIndex = next;
             playSegment(next);
