@@ -941,3 +941,12 @@ select:focus {
 .turnBtn {
     background: linear-gradient(135deg, #2e4577, #04139b);
 }
+
+/* Hiệu ứng khi kéo file vào nút Load */
+#fileLoaderBtn.dragging {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.8);
+    background: linear-gradient(to right, #0072ff, #00c6ff);
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    z-index: 10000; /* Đảm bảo nổi lên trên */
+}

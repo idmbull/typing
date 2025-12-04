@@ -169,10 +169,3 @@ document
     .addEventListener("click", () =>
         document.getElementById("fileLoader").click()
     );
-document
-    .getElementById("fileLoader")
-    .addEventListener("change", (e) => {
-        const btn = document.getElementById("fileLoaderBtn");
-        if (e.target.files.length) btn.textContent = e.target.files[0].name;
-        else btn.textContent = "Upload File";
-    });

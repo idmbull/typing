@@ -123,17 +123,65 @@ export function getCurrentSectionText() {
 
 export function setupFileLoader(onLoadedCallback) {
     const input = document.getElementById("fileLoader");
-    if (!input) return;
+    const btn = document.getElementById("fileLoaderBtn");
 
-    input.addEventListener("change", function () {
-        const file = this.files[0];
+    if (!input || !btn) return;
+
+    // --- Hàm xử lý đọc file chung (cho cả Click và Drop) ---
+    const handleFile = (file) => {
         if (!file) return;
+
+        // Cập nhật tên nút thành tên file
+        btn.textContent = file.name;
 
         const reader = new FileReader();
         reader.onload = function (e) {
             onLoadedCallback(e.target.result, file.name);
         };
         reader.readAsText(file, "utf-8");
+    };
+
+    // 1. Sự kiện CLICK truyền thống (Input Change)
+    input.addEventListener("change", function () {
+        handleFile(this.files[0]);
+    });
+
+    // 2. Sự kiện DRAG & DROP trên Nút
+
+    // Khi kéo file vào vùng nút
+    btn.addEventListener("dragover", (e) => {
+        e.preventDefault(); // Bắt buộc để cho phép drop
+        e.stopPropagation();
+        btn.classList.add("dragging"); // Thêm class CSS
+        btn.textContent = "Drop here!"; // Đổi text gợi ý
+    });
+
+    // Khi kéo ra ngoài nút
+    btn.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove("dragging");
+
+        // Trả lại text cũ (nếu input có file thì lấy tên file, ko thì mặc định)
+        if (input.files.length > 0) {
+            btn.textContent = input.files[0].name;
+        } else {
+            btn.textContent = "📂 Load";
+        }
+    });
+
+    // Khi thả file
+    btn.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove("dragging");
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            // Gán file vào input (để logic đồng bộ) và xử lý
+            input.files = files;
+            handleFile(files[0]);
+        }
     });
 }
 
