@@ -1,172 +1,144 @@
-# 📘 Documentation: Gõ Chính Tả & Dictation App
+Để thêm tính năng **Kéo & Thả (Drag & Drop)** file vào nút "Load", chúng ta cần:
 
-## 1. Giới thiệu
-Đây là một ứng dụng web tĩnh (Static Web App) hỗ trợ luyện gõ phím và nghe chép chính tả (Dictation). Ứng dụng tập trung vào trải nghiệm người dùng với các tính năng như âm thanh bàn phím cơ, phát âm từ vựng, chế độ "Blind Mode" (gõ không nhìn), và hỗ trợ định dạng Markdown.
+1.  Thêm hiệu ứng CSS để người dùng biết khi nào họ đang kéo file vào đúng chỗ.
+2.  Cập nhật logic trong `scripts/loader.js` để xử lý các sự kiện `dragover` (kéo qua) và `drop` (thả).
 
-### Các tính năng chính
-*   **Typing Mode (Reading):** Luyện gõ theo văn bản mẫu. Hỗ trợ Markdown, Tooltip chú giải, chia đoạn theo Heading.
-*   **Dictation Mode (Listening):** Nghe audio và gõ lại nội dung. Hỗ trợ tua lại từng câu (segment), tự động chuyển câu.
-*   **Audio Features:**
-    *   Âm thanh gõ phím (Click sound).
-    *   Phát âm từ vựng (Speak Word) khi gõ xong một từ (nguồn: Oxford, Cambridge, Google TTS).
-*   **UI/UX:** Dark/Light mode, Blind mode (ẩn văn bản chưa gõ), Drag & Drop file.
+Dưới đây là các thay đổi chi tiết:
 
----
+### 1. Cập nhật `styles.css`
+Thêm class `.dragging` để tạo hiệu ứng thị giác khi người dùng giữ file bên trên nút Load.
 
-## 2. Cài đặt & Chạy dự án
+```css
+/* --- Thêm vào cuối file styles.css --- */
 
-Do dự án sử dụng **ES Modules** (`<script type="module">`) và **Fetch API** để tải file JSON/Text, bạn **không thể** mở trực tiếp file `index.html` bằng cách double-click (giao thức `file://`).
-
-### Yêu cầu
-*   Trình duyệt hiện đại (Chrome, Edge, Firefox).
-*   Một local web server.
-
-### Cách chạy
-1.  **Sử dụng VS Code (Khuyên dùng):**
-    *   Cài đặt Extension **Live Server**.
-    *   Chuột phải vào `index.html` chọn **"Open with Live Server"**.
-
-2.  **Sử dụng Python:**
-    *   Mở terminal tại thư mục dự án.
-    *   Chạy lệnh: `python -m http.server 8000`
-    *   Truy cập: `http://localhost:8000`
-
----
-
-## 3. Cấu trúc thư mục
-
-```
-project-root/
-├── index.html              # Giao diện chính (Typing Mode)
-├── dictation.html          # Giao diện Dictation Mode
-├── styles.css              # Style chung cho toàn bộ app
-├── index.json              # Danh sách bài tập Typing
-├── dictation.json          # Danh sách bài tập Dictation
-├── scripts/                # Mã nguồn JavaScript
-│   ├── app.js              # Entry point cho index.html
-│   ├── dictation-app.js    # Entry point cho dictation.html
-│   ├── dictation.js        # Logic xử lý Dictation (File upload/Modal)
-│   ├── dictation-loader.js # Parser cho file dictation (.txt)
-│   ├── typing-engine.js    # Core logic so sánh text gõ vs text gốc
-│   ├── renderer.js         # Render HTML từ Markdown
-│   ├── audio.js            # Xử lý TTS (Speak Word) và Click sound
-│   ├── superAudioPlayer.js # Xử lý Audio Context (cắt segment chính xác)
-│   ├── state.js            # Quản lý trạng thái toàn cục (State Management)
-│   ├── loader.js           # Xử lý load file, Drag & Drop
-│   └── ... (utils, stats, theme, tooltip)
-└── texts/                  # Chứa dữ liệu bài tập
-    ├── typing/             # File .md/.txt cho Typing Mode
-    └── dictation/          # File .txt (kịch bản) và .mp3 cho Dictation Mode
+/* Hiệu ứng khi kéo file vào nút Load */
+#fileLoaderBtn.dragging {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 198, 255, 0.8);
+    background: linear-gradient(to right, #0072ff, #00c6ff);
+    border: 2px dashed rgba(255, 255, 255, 0.8);
+    z-index: 10000; /* Đảm bảo nổi lên trên */
+}
 ```
 
----
+### 2. Cập nhật `scripts/loader.js`
+Chúng ta sẽ sửa hàm `setupFileLoader`. Thay vì chỉ lắng nghe `input change`, ta sẽ lắng nghe thêm `drop` trên cái nút (`#fileLoaderBtn`).
 
-## 4. Định dạng dữ liệu (Data Format)
+Bạn thay thế toàn bộ hàm `setupFileLoader` cũ bằng đoạn code mới này:
 
-Để thêm nội dung mới, bạn cần tạo file đúng định dạng và đặt vào thư mục tương ứng.
+```javascript
+// scripts/loader.js
 
-### A. Typing Mode (File `.md` hoặc `.txt`)
-Hỗ trợ cú pháp Markdown cơ bản.
+// ... (các phần code cũ giữ nguyên) ...
 
-*   **Tiêu đề bài:** Dòng bắt đầu bằng `# `.
-*   **Chia phần (Section):** Dòng bắt đầu bằng `## `. Ứng dụng sẽ tạo dropdown menu để chọn phần.
-*   **Tooltip (Chú giải):** Sử dụng cú pháp `^[Nội dung chú giải]`.
-    *   Đặt ngay sau từ: `Word^[Giải nghĩa]`
-    *   Đặt sau cụm từ (bôi đậm): `**Phrasal Verbs**^[Cụm động từ]`
+export function setupFileLoader(onLoadedCallback) {
+    const input = document.getElementById("fileLoader");
+    const btn = document.getElementById("fileLoaderBtn");
+    
+    if (!input || !btn) return;
 
-**Ví dụ:**
-```markdown
-# Bài Học Số 1
+    // --- Hàm xử lý đọc file chung (cho cả Click và Drop) ---
+    const handleFile = (file) => {
+        if (!file) return;
 
-## Phần 1: Giới thiệu
-Hello world. This is a **bold text**^[Văn bản in đậm].
-Run out of^[Hết cái gì đó] time.
+        // Cập nhật tên nút thành tên file
+        btn.textContent = file.name;
 
-## Phần 2: Nội dung
-Đoạn văn tiếp theo...
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            onLoadedCallback(e.target.result, file.name);
+        };
+        reader.readAsText(file, "utf-8");
+    };
+
+    // 1. Sự kiện CLICK truyền thống (Input Change)
+    input.addEventListener("change", function () {
+        handleFile(this.files[0]);
+    });
+
+    // 2. Sự kiện DRAG & DROP trên Nút
+    
+    // Khi kéo file vào vùng nút
+    btn.addEventListener("dragover", (e) => {
+        e.preventDefault(); // Bắt buộc để cho phép drop
+        e.stopPropagation();
+        btn.classList.add("dragging"); // Thêm class CSS
+        btn.textContent = "Drop here!"; // Đổi text gợi ý
+    });
+
+    // Khi kéo ra ngoài nút
+    btn.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove("dragging");
+        
+        // Trả lại text cũ (nếu input có file thì lấy tên file, ko thì mặc định)
+        if (input.files.length > 0) {
+            btn.textContent = input.files[0].name;
+        } else {
+            btn.textContent = "📂 Load";
+        }
+    });
+
+    // Khi thả file
+    btn.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove("dragging");
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            // Gán file vào input (để logic đồng bộ) và xử lý
+            input.files = files; 
+            handleFile(files[0]);
+        }
+    });
+}
+
+// ... (giữ nguyên phần còn lại) ...
 ```
 
-### B. Dictation Mode (File `.txt` + `.mp3`)
-Yêu cầu 2 file cùng tên (ví dụ: `d01.txt` và `d01.mp3`) đặt trong `texts/dictation/`.
+### 3. Dọn dẹp `scripts/app.js`
+Vì logic cập nhật tên nút (`btn.textContent`) đã được chuyển vào trong `loader.js` để dùng chung cho cả Drop và Click, bạn nên xóa đoạn code xử lý sự kiện `change` thừa ở cuối file `app.js` (nếu có) để tránh xung đột hoặc chạy 2 lần.
 
-**Định dạng file `.txt` (TSV - Tab Separated Values):**
-Mỗi dòng đại diện cho một câu (segment).
-Cấu trúc: `StartTime` {TAB} `EndTime` {TAB} `Nội dung`
+Trong `scripts/app.js`, tìm đoạn cuối cùng và **xóa hoặc comment** phần lắng nghe sự kiện change của `#fileLoader`:
 
-*   **StartTime/EndTime:** Tính bằng giây (Seconds).
-*   **Nội dung:** Hỗ trợ Markdown và Tooltip giống Typing Mode.
-*   **Dòng trống:** Nếu có dòng trống giữa các dòng, ứng dụng sẽ hiểu là **ngắt đoạn văn** (Paragraph break).
+```javascript
+// scripts/app.js - Cập nhật đoạn cuối file
 
-**Ví dụ:**
-```text
-0.5	2.3	Hello everyone, welcome back.
-2.5	5.0	Today we will learn about **Javascript**^[Ngôn ngữ lập trình].
+// FILE LOADER
+setupFileLoader(async (content, filename) => {
+    await loadRawTextFromUserFile(content, filename);
 
-5.5	8.0	(Dòng trên là dòng trống, câu này sẽ sang đoạn mới).
+    resetState();
+    const txt = getCurrentSectionText();
+    displayText(txt);
+
+    DOM.textInput.value = "";
+    DOM.textInput.disabled = true;
+    updateStatsDOMImmediate(100, 0, "0s", 0);
+    DOM.textContainer.scrollTop = 0;
+});
+
+// Sự kiện click nút vẫn giữ nguyên để kích hoạt input ẩn
+document
+    .getElementById("fileLoaderBtn")
+    .addEventListener("click", () =>
+        document.getElementById("fileLoader").click()
+    );
+
+/* --- ĐOẠN NÀY NÊN XÓA VÌ ĐÃ CHUYỂN LOGIC VÀO loader.js ---
+document
+    .getElementById("fileLoader")
+    .addEventListener("change", (e) => {
+        const btn = document.getElementById("fileLoaderBtn");
+        if (e.target.files.length) btn.textContent = e.target.files[0].name;
+        else btn.textContent = "Upload File";
+    });
+----------------------------------------------------------- */
 ```
 
----
-
-## 5. Hướng dẫn sử dụng
-
-### Chế độ Typing (Reading)
-1.  **Chọn bài:** Sử dụng dropdown ở footer hoặc kéo thả file `.txt/.md` vào nút **📂 Load**.
-2.  **Cài đặt:**
-    *   *Sound:* Bật/tắt tiếng gõ phím.
-    *   *Speak Word:* Đọc từ vựng tiếng Anh khi gõ xong từ đó.
-    *   *Tooltip:* Tự động hiện chú giải khi gõ đến từ có note.
-    *   *Blind Mode:* Ẩn văn bản chưa gõ, giúp luyện trí nhớ.
-3.  **Bắt đầu:** Nhấn nút **Start** hoặc bắt đầu gõ vào ô input.
-
-### Chế độ Dictation (Listening)
-1.  **Chọn bài:** Chọn từ playlist hoặc nhấn **📂 Load** để tải file thủ công (chọn cặp file `.txt` + `.mp3`).
-2.  **Quy trình:**
-    *   Audio sẽ phát đoạn (segment) đầu tiên.
-    *   Gõ lại nội dung nghe được.
-    *   Nếu gõ đúng hết segment, audio tự động chuyển sang segment tiếp theo.
-3.  **Hỗ trợ:**
-    *   Nhấn `Ctrl + Space` để nghe lại đoạn hiện tại.
-    *   Dùng thanh trượt Volume để chỉnh âm lượng.
-
-### Phím tắt (Hotkeys)
-
-| Phím tắt | Chức năng | Phạm vi |
-| :--- | :--- | :--- |
-| `Ctrl + B` | Bật / Tắt Blind Mode | Toàn cục |
-| `Ctrl + Space` | Nghe lại đoạn (Replay Segment) | Dictation |
-| `Tab` | (Khi đang gõ) Reset focus vào ô input | Toàn cục |
-
----
-
-## 6. Kiến trúc kỹ thuật (Dành cho Developer)
-
-### State Management (`state.js`)
-Sử dụng một đối tượng `STATE` duy nhất để lưu trữ trạng thái app (text gốc, text đang gõ, vị trí con trỏ, audio segment, word boundaries...).
-
-### Typing Engine (`typing-engine.js`)
-*   Không so sánh chuỗi đơn thuần.
-*   **Logic:**
-    1.  `renderer.js` chuyển Markdown -> HTML (để hiển thị) và Markdown -> Plain Text (để so sánh).
-    2.  Khi người dùng gõ, `typing-engine` so sánh ký tự tại con trỏ với Plain Text gốc.
-    3.  Trả về mảng `changed` (các index cần re-render màu xanh/đỏ) để tối ưu hiệu năng DOM.
-
-### Audio System (`audio.js` & `superAudioPlayer.js`)
-*   **TTS (Speak Word):** Sử dụng chiến lược "Fallback". Tìm audio theo thứ tự: Google Sheet (Cache) -> Oxford -> Cambridge -> Google TTS. Có hàng đợi (Scheduler) để tránh chồng âm thanh khi gõ nhanh.
-*   **Dictation Player:** Sử dụng `AudioContext` (Web Audio API) thay vì thẻ `<audio>` thông thường để đảm bảo độ trễ thấp nhất và cắt đoạn (loop segment) chính xác đến mili-giây.
-
-### Loader & Drag-Drop (`loader.js`)
-*   Xử lý sự kiện `dragover` và `drop` trên nút Load.
-*   Sử dụng `FileReader` để đọc nội dung file text phía client mà không cần upload lên server.
-
----
-
-## 7. Troubleshooting (Xử lý lỗi thường gặp)
-
-**Q: Tại sao Dictation không chạy khi tôi chọn bài?**
-A: Kiểm tra xem file `.mp3` có tồn tại trong thư mục `texts/dictation/` và có tên trùng khớp với file `.txt` không. Mở Console (F12) để xem lỗi 404.
-
-**Q: Tại sao tôi gõ đúng nhưng vẫn báo sai?**
-A: Kiểm tra file nguồn xem có chứa ký tự lạ (như Non-breaking space `&nbsp;`) không. Engine đã có hàm `cleanText` nhưng đôi khi copy từ PDF/Word vẫn bị lỗi font.
-
-**Q: Drag & Drop không hoạt động?**
-A: Hãy chắc chắn bạn kéo file vào đúng nút "Load" (nút sẽ sáng lên). Chỉ hỗ trợ file text (`.txt`, `.md`, `.json`).
+### Kết quả
+Bây giờ bạn có thể:
+1.  Bấm vào nút **Load** để chọn file như cũ.
+2.  Kéo file `.txt` hoặc `.md` từ máy tính và thả trực tiếp vào nút **Load**. Nút sẽ sáng lên và đổi chữ thành "Drop here!" khi bạn kéo file qua.

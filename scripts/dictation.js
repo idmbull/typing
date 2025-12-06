@@ -75,24 +75,123 @@ export function initDictation() {
         dictationModal,
         dictationStartBtn,
         dictationCancelBtn,
-        dictationBlindMode
+        dictationBlindMode,
+        dictationSubInput,   // Thêm tham chiếu
+        dictationAudioInput  // Thêm tham chiếu
     } = DOM;
 
+    // 1. Logic mở/đóng Modal cũ (Giữ nguyên)
     dictationBtn.addEventListener("click", () =>
         dictationModal.classList.remove("hidden")
     );
-
     dictationCancelBtn.addEventListener("click", () =>
         dictationModal.classList.add("hidden")
     );
 
-    const readyCheck = () =>
+    // 2. Hàm kiểm tra nút Start (Giữ nguyên)
+    const readyCheck = () => {
         dictationStartBtn.disabled =
-        !DOM.dictationSubInput.files.length ||
-        !DOM.dictationAudioInput.files.length;
+            !dictationSubInput.files.length ||
+            !dictationAudioInput.files.length;
+    };
 
-    DOM.dictationSubInput.addEventListener("change", readyCheck);
-    DOM.dictationAudioInput.addEventListener("change", readyCheck);
+    dictationSubInput.addEventListener("change", readyCheck);
+    dictationAudioInput.addEventListener("change", readyCheck);
+
+    // ============================================================
+    // 3. THÊM LOGIC KÉO THẢ (DRAG & DROP) - CẬP NHẬT
+    // ============================================================
+    
+    // Helper: Cập nhật tên nút dựa trên file hiện tại
+    const updateButtonLabel = () => {
+        if (dictationSubInput.files.length > 0) {
+            const name = dictationSubInput.files[0].name;
+            dictationBtn.textContent = name;
+            dictationBtn.title = name; // Tooltip khi tên quá dài
+        } else {
+            dictationBtn.textContent = "📂 Load File";
+            dictationBtn.title = "";
+        }
+    };
+
+    // Khi kéo file qua nút
+    dictationBtn.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dictationBtn.classList.add("dragging");
+        dictationBtn.textContent = "Drop Text & Audio!"; 
+    });
+
+    // Khi kéo ra ngoài (Hủy kéo) -> Trả lại tên file cũ (nếu có)
+    dictationBtn.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dictationBtn.classList.remove("dragging");
+        
+        // Thay vì reset cứng về "Load File", ta kiểm tra xem đã có file chưa
+        updateButtonLabel();
+    });
+
+    // Khi thả file
+    dictationBtn.addEventListener("drop", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dictationBtn.classList.remove("dragging");
+
+        const files = Array.from(e.dataTransfer.files);
+        if (!files.length) {
+            updateButtonLabel(); // Trả lại tên cũ nếu không thả file nào
+            return;
+        }
+
+        // Mở Modal
+        dictationModal.classList.remove("hidden");
+
+        // Phân loại file
+        let hasText = false;
+        let hasAudio = false;
+
+        files.forEach(file => {
+            const name = file.name.toLowerCase();
+            
+            // Xử lý File Text
+            if (name.endsWith(".txt") || name.endsWith(".tsv")) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                dictationSubInput.files = dt.files;
+                hasText = true;
+            } 
+            // Xử lý File Audio
+            else if (name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".ogg")) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                dictationAudioInput.files = dt.files;
+                hasAudio = true;
+            }
+        });
+
+        // Cập nhật trạng thái nút Start trong Modal
+        readyCheck();
+
+        // --- CẬP NHẬT TÊN NÚT Ở TOOLBAR ---
+        updateButtonLabel();
+
+        // Thông báo nhỏ
+        if (files.length === 1) {
+            if (hasText && !dictationAudioInput.files.length) {
+                // Đã có text, thiếu audio
+            } else if (hasAudio && !dictationSubInput.files.length) {
+                alert("Đã nhận file Audio. Vui lòng chọn thêm file Text!");
+            }
+        }
+    });
+
+    // Xử lý thêm trường hợp: Người dùng chọn file thủ công qua Modal (không kéo thả)
+    // Thì nút bên ngoài cũng nên cập nhật theo
+    dictationSubInput.addEventListener("change", () => {
+        readyCheck();
+        updateButtonLabel();
+    });
 
     // sync blind mode
     dictationBlindMode.addEventListener("change", (e) => {
@@ -178,3 +277,4 @@ export function initDictation() {
         }
     });
 }
+

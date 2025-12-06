@@ -134,6 +134,9 @@ export function setupFileLoader(onLoadedCallback) {
         // Cập nhật tên nút thành tên file
         btn.textContent = file.name;
 
+        // Thêm title để hover vào xem được tên đầy đủ
+        btn.title = file.name;
+
         const reader = new FileReader();
         reader.onload = function (e) {
             onLoadedCallback(e.target.result, file.name);
@@ -167,6 +170,7 @@ export function setupFileLoader(onLoadedCallback) {
             btn.textContent = input.files[0].name;
         } else {
             btn.textContent = "📂 Load";
+            btn.title = "Tải file từ máy tính (.txt, .md)"; // Reset title mặc định
         }
     });
 

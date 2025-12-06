@@ -5,25 +5,27 @@ export const DOM = {
     textDisplay: $('#textDisplay'),
     textContainer: $('#textContainer'),
     textInput: $('#textInput'),
-    startBtn: $('#startBtn'),
-    resetBtn: $('#resetBtn'),
-    
+
+    // THAY ĐỔI: Chuyển sang Toggle Switch
+    actionToggle: $('#actionToggle'), // Checkbox input
+    actionLabel: $('#actionLabel'),   // Label text (Start/Stop)
+
     // Settings
     soundToggle: $('#soundToggle'),
     autoPronounceToggle: $('#autoPronounceToggle'),
     autoTooltipToggle: $('#autoTooltipToggle'),
-    blindModeToggle: $('#blindModeToggle'), // ⭐ Global Blind Mode
+    blindModeToggle: $('#blindModeToggle'),
     themeToggle: $('#themeToggle'),
-    
+
     difficultySelect: $('#difficulty'),
     playlistSelect: $('#playlist'),
-    
+
     // Stats
     accuracyEl: $('#accuracy'),
     wpmEl: $('#wpm'),
     timeEl: $('#time'),
     errorsEl: $('#errors'),
-    
+
     globalTooltip: $('#globalTooltip'),
     audioPlayer: $('#player'),
 
@@ -42,36 +44,37 @@ export let STATE = {
     isActive: false,
     startTime: null,
     timerInterval: null,
-    
+
     statTotalKeys: 0,
     statCorrectKeys: 0,
     statErrors: 0,
+    prevInputLen: 0,
     scheduledStatUpdate: false,
-    
+
     prevIndex: 0,
     textSpans: [],
     originalText: "",
 
-    // ⭐ WORD META (cho Speak Word)
-    wordTokens: [],   // ["there", "are", "many", ...]
-    wordStarts: [],   // [  0,     6,     10,   ...]
-    wordEnds: [],     // [  5,     9,     14,   ...]
-    
+    // WORD META
+    wordTokens: [],
+    wordStarts: [],
+    wordEnds: [],
+
     // Click sound
     clickPool: [],
     clickIndex: 0,
-    
+
     // Audio state
     lastSpokenWord: "",
     speakLock: false,
     prevInputText: "",
     audioCache: {},
-    
+
     // Blind Mode
-    blindMode: false, // ⭐ Global Blind Mode
+    blindMode: false,
 
     // Mode
-    mode: "typing", // "typing" | "dictation"
+    mode: "typing",
 
     // Dictation meta
     dictation: {
@@ -94,15 +97,14 @@ export function resetState() {
     STATE.statTotalKeys = 0;
     STATE.statCorrectKeys = 0;
     STATE.statErrors = 0;
+    STATE.prevInputLen = 0;
     STATE.scheduledStatUpdate = false;
 
     STATE.prevIndex = 0;
     STATE.lastSpokenWord = "";
     STATE.prevInputText = "";
 
-    // ⭐ Reset word meta khi đổi bài / reset
     STATE.wordTokens = [];
     STATE.wordStarts = [];
     STATE.wordEnds = [];
-    // blindMode giữ nguyên theo toggle UI
 }

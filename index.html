@@ -4,111 +4,116 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gõ Chính Tả - Phát Âm Khi Bắt Đầu Từ</title>
+    <title>Idm Typing</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa&family=Courier+Prime&family=PT+Mono&display=swap"
-        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Gõ Chính Tả - Phát Âm Khi Bắt Đầu Từ</h1>
-            <p class="subtitle">Phát triển là phải để người dân sống vui, không lo hết tiền hay ốm đau</p>
+            <h1>Reading Practice</h1>
+            <p class="subtitle">Tập trung - Thư giãn - Phát triển</p>
         </header>
 
-        <div class="content">
-            <!-- Stats -->
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="accuracy">100%</div>
-                    <div class="stat-label">Độ chính xác</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="wpm">0</div>
-                    <div class="stat-label">Từ/phút</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="time">0s</div>
-                    <div class="stat-label">Thời gian</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="errors">0</div>
-                    <div class="stat-label">Lỗi</div>
-                </div>
+        <!-- Stats: Đã thêm lại #errors để tránh lỗi JS -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="accuracy">100%</div>
+                <div class="stat-label">Acc</div>
             </div>
-
-            <!-- Text display -->
-            <div class="text-display-container" id="textContainer">
-                <div class="text-display" id="textDisplay"></div>
+            <div class="stat-item">
+                <div class="stat-value" id="wpm">0</div>
+                <div class="stat-label">WPM</div>
             </div>
-
-            <!-- Input -->
-            <div class="input-area">
-                <textarea id="textInput" placeholder="Bắt đầu gõ tại đây..."></textarea>
+            <div class="stat-item">
+                <div class="stat-value" id="time">0s</div>
+                <div class="stat-label">Time</div>
             </div>
+            <div class="stat-item">
+                <div class="stat-value" id="errors">0</div>
+                <div class="stat-label">Err</div>
+            </div>
+        </div>
 
-            <!-- Settings -->
-            <div class="settings">
-                <div class="toggle-container">
+        <!-- Text Display -->
+        <div class="text-display-container" id="textContainer">
+            <div class="text-display" id="textDisplay">Loading text...</div>
+        </div>
+
+        <!-- Hidden Input -->
+        <div class="input-area">
+            <textarea id="textInput"></textarea>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <!-- Left: Settings -->
+            <div class="toolbar-left settings-group">
+                <div class="toggle-container" title="Chế độ Tối/Sáng">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="themeToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span>Dark</span>
+                </div>
+                <div class="toggle-container" title="Âm thanh gõ phím">
                     <label class="toggle-switch">
                         <input type="checkbox" id="soundToggle" checked>
                         <span class="slider"></span>
                     </label>
-                    <label for="soundToggle">Sound</label>
+                    <span>Sound</span>
                 </div>
 
-                <div class="toggle-container">
+                <div class="toggle-container" title="Phát âm từ vựng">
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoPronounceToggle" checked>
                         <span class="slider"></span>
                     </label>
-                    <label for="autoPronounceToggle">Speak Word</label>
+                    <span>Speak</span>
                 </div>
 
-                <div class="toggle-container">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="autoTooltipToggle" checked>
-                        <span class="slider"></span>
-                    </label>
-                    <label for="autoTooltipToggle">Tooltip</label>
-                </div>
-
-                <!-- Blind Mode -->
-                <div class="toggle-container">
+                <div class="toggle-container" title="Chế độ không nhìn">
                     <label class="toggle-switch">
                         <input type="checkbox" id="blindModeToggle">
                         <span class="slider"></span>
                     </label>
-                    <label for="blindModeToggle">Blind Mode</label>
+                    <span>Blind</span>
                 </div>
+
+                <div class="toggle-container" title="Hiện chú thích">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoTooltipToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span>Tooltip</span>
+                </div>
+
+                <!-- ACTION TOGGLE (Thay cho Button) -->
+                <div class="toggle-container" title="Bắt đầu / Dừng bài tập">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="actionToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="actionLabel" style="font-size: 0.9rem; margin-right: 8px;">Start</span>
+                </div>
+                
             </div>
         </div>
 
         <footer>
+            <!-- Input file ẩn -->
+            <input type="file" id="fileLoader" accept=".txt,.md,.json" hidden>
+            <!-- Nút Load gắn sự kiện click vào input trên -->
+            <button id="fileLoaderBtn" class="btn-icon">📂 Load</button>
             <select id="playlist"></select>
-            <label for="difficulty">> </label>
+            <span>/</span>
             <select id="difficulty"></select>
+            <button class="btn-icon" onclick="window.location.href='dictation.html'">🎧 Listening</button>
         </footer>
     </div>
 
     <div id="globalTooltip"></div>
-
-    <!-- Floating buttons -->
-    <div class="floating-buttons">
-        <button id="startBtn" class="floating-btn">Start</button>
-        <button id="resetBtn" class="floating-btn">Reset</button>
-        <button id="themeToggle" class="floating-btn">Dark</button>
-        <input type="file" id="fileLoader" accept=".txt,.md,.json" hidden>
-        <button id="fileLoaderBtn" class="floating-btn">📂 Load</button>
-
-        <!-- Nút mở Dictation App riêng -->
-        <button class="floating-btn turnBtn" onclick="window.location.href='dictation.html'">🎧 Listening</button>
-    </div>
-
     <audio id="player" class="hidden"></audio>
 
     <script type="module" src="scripts/app.js"></script>

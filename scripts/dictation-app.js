@@ -1,12 +1,11 @@
 // ================================
-// dictation-app.js — Bản đã vá (Fix Timer)
+// dictation-app.js
 // ================================
 
 import { DOM, STATE, resetState } from "./state.js";
-// [FIX] Import thêm startTimer và stopTimer
 import { updateStatsDOMImmediate, startTimer, stopTimer } from "./stats.js";
 import { displayText } from "./renderer.js";
-import { initTheme } from "./theme.js";
+import { initTheme, setTheme } from "./theme.js";
 import { SuperAudioPlayer } from "./superAudioPlayer.js";
 import {
     loadDictationPlaylist,
@@ -17,6 +16,24 @@ import {
 import { handleDictationInput } from "./dictation-input.js";
 
 const superPlayer = new SuperAudioPlayer();
+
+/* ============================================================
+   HELPER: UPDATE UI (TOGGLE)
+============================================================ */
+function updateActionUI() {
+    DOM.actionToggle.checked = STATE.isActive;
+
+    if (STATE.isActive) {
+        DOM.actionLabel.textContent = "Stop";
+        DOM.actionLabel.style.color = "var(--incorrect-text)";
+    } else {
+        DOM.actionLabel.textContent = "Start";
+        DOM.actionLabel.style.color = "var(--correct-text)";
+        
+        // Chỉ cho phép gạt switch khi đã có nội dung
+        DOM.actionToggle.disabled = !STATE.dictation.fullText;
+    }
+}
 
 /* ============================================================
    RESET STATE CHO DICTATION
@@ -34,7 +51,7 @@ function resetDictState() {
 }
 
 /* ============================================================
-   ÁP DỤNG BLIND MODE CHO DICTATION (HÀM MỚI)
+   ÁP DỤNG BLIND MODE
 ============================================================ */
 export function applyDictationBlindMode() {
     const spans = STATE.textSpans;
@@ -43,12 +60,10 @@ export function applyDictationBlindMode() {
     const caret = DOM.textInput.value.length;
 
     if (!STATE.blindMode) {
-        // Hiện toàn bộ
         spans.forEach(s => s.classList.remove("blind-hidden"));
         return;
     }
 
-    // Blind Mode: chỉ hiện từ đầu → caret
     for (let i = 0; i < spans.length; i++) {
         if (i <= caret) spans[i].classList.remove("blind-hidden");
         else spans[i].classList.add("blind-hidden");
@@ -56,7 +71,7 @@ export function applyDictationBlindMode() {
 }
 
 /* ============================================================
-   TẢI PLAYLIST TỪ dictation.json
+   TẢI PLAYLIST
 ============================================================ */
 async function loadDictationPlaylistToUI() {
     const list = await loadDictationPlaylist();
@@ -97,34 +112,25 @@ async function loadCurrentDictation() {
         alert("Không tìm thấy file MP3 tương ứng!");
     }
 
-    // Render text
     displayText(fullTextRaw);
 
-    // ⭐ FIX QUAN TRỌNG — giống Typing Mode
     STATE.prevIndex = 0;
     if (STATE.textSpans[0]) {
         STATE.textSpans[0].classList.add("current");
     }
 
-    // Áp dụng blind mode
     applyDictationBlindMode();
 
-
-    // Không cho gõ trước khi bấm START
     DOM.textInput.value = "";
     DOM.textInput.disabled = true;
 
     STATE.isActive = false;
-    DOM.startBtn.disabled = false;
-    DOM.startBtn.textContent = "Start";
-
     updateStatsDOMImmediate(100, 0, "0s", 0);
     DOM.textContainer.scrollTop = 0;
 
     document.querySelector("header h1").textContent = filename.replace(".txt", "");
 
-    // Áp dụng trạng thái blind hiện tại (nếu bật)
-    applyDictationBlindMode();
+    updateActionUI(); // Update để enable switch
 }
 
 /* ============================================================
@@ -140,31 +146,38 @@ function playCurrentSegment() {
 }
 
 /* ============================================================
-   BẮT ĐẦU DICTATION
+   ACTION HANDLER (GỘP START/RESET)
 ============================================================ */
+function handleAction(e) {
+    if (e.target.checked) {
+        startDictation();
+    } else {
+        resetDictation();
+    }
+}
+
 function startDictation() {
     if (STATE.isActive) return;
 
     STATE.isActive = true;
     DOM.textInput.disabled = false;
     DOM.textInput.focus();
-    DOM.startBtn.textContent = "Typing...";
-    DOM.startBtn.disabled = true;
-
-    // Phát sự kiện bắt đầu timer
+    
     document.dispatchEvent(new CustomEvent("timer:start"));
 
     STATE.dictation.currentSegmentIndex = 0;
     playCurrentSegment();
+    
+    updateActionUI();
 }
 
-/* ============================================================
-   RESET
-============================================================ */
 function resetDictation() {
-    // Phát sự kiện dừng timer
     document.dispatchEvent(new CustomEvent("timer:stop"));
+    
+    // Load lại bài như ban đầu
     loadCurrentDictation();
+    
+    // (loadCurrentDictation đã gọi updateActionUI rồi)
 }
 
 /* ============================================================
@@ -176,7 +189,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadDictationPlaylistToUI();
     await loadCurrentDictation();
 
-    // Fix Volume: Gắn sự kiện cho thanh trượt
     const volInput = document.getElementById("dictationVolume");
     if (volInput) {
         superPlayer.setVolume(parseFloat(volInput.value));
@@ -190,11 +202,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         applyDictationBlindMode();
     });
 
-    DOM.startBtn.addEventListener("click", startDictation);
-    DOM.resetBtn.addEventListener("click", resetDictation);
+    // Nút Action Toggle
+    if (DOM.actionToggle) {
+        DOM.actionToggle.addEventListener("change", handleAction);
+    }
+    
     DOM.playlistSelect.addEventListener("change", loadCurrentDictation);
 
-    // Blind Mode toggle
+    DOM.themeToggle.addEventListener("change", (e) => {
+        const newTheme = e.target.checked ? "dark" : "light";
+        setTheme(newTheme);
+        if (!DOM.textInput.disabled) {
+            DOM.textInput.focus();
+        }
+    });
+
     DOM.blindModeToggle?.addEventListener("change", (e) => {
         STATE.blindMode = e.target.checked;
         if (STATE.blindMode) {
@@ -205,45 +227,41 @@ document.addEventListener("DOMContentLoaded", async () => {
         applyDictationBlindMode();
     });
 
-    // Hotkey Ctrl+B
     document.addEventListener("keydown", (e) => {
         if (STATE.mode !== "dictation") return;
         if (e.ctrlKey && (e.key === "b" || e.key === "B")) {
             e.preventDefault();
             STATE.blindMode = !STATE.blindMode;
             DOM.blindModeToggle.checked = STATE.blindMode;
-
             if (STATE.blindMode) {
                 document.body.classList.add("blind-mode");
             } else {
                 document.body.classList.remove("blind-mode");
             }
-
             applyDictationBlindMode();
         }
     });
 
-    // Hotkey Ctrl + Space → replay segment hiện tại
     document.addEventListener("keydown", (e) => {
         if (STATE.mode !== "dictation") return;
         if (e.ctrlKey && e.code === "Space") {
             e.preventDefault();
-            const idx = STATE.dictation.currentSegmentIndex;
-            const seg = STATE.dictation.segments[idx];
-            if (!seg) return;
-            superPlayer.stop();
-            superPlayer.playSegment(seg.audioStart, seg.audioEnd);
+            playCurrentSegment();
         }
     });
 
-    // Fix mất focus
     DOM.textInput.addEventListener("blur", () => {
-        if (STATE.mode === "dictation") {
+        if (STATE.mode === "dictation" && STATE.isActive) {
             setTimeout(() => DOM.textInput.focus(), 50);
         }
     });
 
-    // [FIX] LẮNG NGHE SỰ KIỆN TIMER ĐỂ CHẠY ĐỒNG HỒ
     document.addEventListener("timer:start", startTimer);
-    document.addEventListener("timer:stop", stopTimer);
+    document.addEventListener("timer:stop", () => {
+        stopTimer();
+        if (DOM.textInput.disabled) {
+             STATE.isActive = false;
+             updateActionUI();
+        }
+    });
 });
