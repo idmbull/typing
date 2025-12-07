@@ -15,6 +15,9 @@ import {
 } from "./dictation-loader.js";
 import { handleDictationInput } from "./dictation-input.js";
 
+// THÊM IMPORT initDictation
+import { initDictation } from "./dictation.js";
+
 const superPlayer = new SuperAudioPlayer();
 
 /* ============================================================
@@ -30,7 +33,6 @@ function updateActionUI() {
         DOM.actionLabel.textContent = "Start";
         DOM.actionLabel.style.color = "var(--correct-text)";
         
-        // Chỉ cho phép gạt switch khi đã có nội dung
         DOM.actionToggle.disabled = !STATE.dictation.fullText;
     }
 }
@@ -109,7 +111,7 @@ async function loadCurrentDictation() {
         await superPlayer.load(buf);
         STATE.dictation.audioUrl = audioUrl;
     } else {
-        alert("Không tìm thấy file MP3 tương ứng!");
+        console.warn("Không tìm thấy file MP3 tương ứng!");
     }
 
     displayText(fullTextRaw);
@@ -130,7 +132,7 @@ async function loadCurrentDictation() {
 
     document.querySelector("header h1").textContent = filename.replace(".txt", "");
 
-    updateActionUI(); // Update để enable switch
+    updateActionUI();
 }
 
 /* ============================================================
@@ -173,11 +175,7 @@ function startDictation() {
 
 function resetDictation() {
     document.dispatchEvent(new CustomEvent("timer:stop"));
-    
-    // Load lại bài như ban đầu
     loadCurrentDictation();
-    
-    // (loadCurrentDictation đã gọi updateActionUI rồi)
 }
 
 /* ============================================================
@@ -185,6 +183,9 @@ function resetDictation() {
 ============================================================ */
 document.addEventListener("DOMContentLoaded", async () => {
     initTheme();
+
+    // KHỞI TẠO DICTATION MODAL LOGIC VỚI PLAYER CHÍNH
+    initDictation(superPlayer);
 
     await loadDictationPlaylistToUI();
     await loadCurrentDictation();
@@ -202,7 +203,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         applyDictationBlindMode();
     });
 
-    // Nút Action Toggle
     if (DOM.actionToggle) {
         DOM.actionToggle.addEventListener("change", handleAction);
     }

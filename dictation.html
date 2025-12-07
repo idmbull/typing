@@ -11,12 +11,12 @@
 
 <body>
     <div class="container">
+        <!-- ... (GIỮ NGUYÊN NỘI DUNG HEAD, STATS, TOOLBAR, FOOTER) ... -->
         <header>
             <h1>Dictation Practice</h1>
             <p class="subtitle">Nghe kỹ - Gõ chính xác</p>
         </header>
 
-        <!-- Stats: Thêm lại Time và Error -->
         <div class="stats">
             <div class="stat-item">
                 <div class="stat-value" id="accuracy">100%</div>
@@ -45,7 +45,6 @@
             <textarea id="textInput"></textarea>
         </div>
 
-        <!-- TOOLBAR -->
         <div class="toolbar">
             <div class="toolbar-left settings-group">
                 <div class="toggle-container" title="Chế độ Tối/Sáng">
@@ -77,7 +76,6 @@
                     <span>Blind</span>
                 </div>
 
-                <!-- Dictation không có tooltip toggle vì mặc định thường dùng blind mode hoặc nghe -->
                 <div class="toggle-container">
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoTooltipToggle" checked>
@@ -86,7 +84,6 @@
                     <span>Tooltip</span>
                 </div>
 
-                <!-- ACTION TOGGLE (Thay cho Button) -->
                 <div class="toggle-container" title="Bắt đầu / Dừng bài tập">
                     <label class="toggle-switch">
                         <input type="checkbox" id="actionToggle">
@@ -95,12 +92,9 @@
                     <span id="actionLabel" style="font-size: 0.9rem; margin-right: 8px;">Start</span>
                 </div>
 
-                <!-- Thanh volume -->
                 <div class="mini-volume-control" title="Âm lượng đọc">
                     <input type="range" id="dictationVolume" min="0" max="5" step="0.1" value="2.5">
                 </div>
-
-                
             </div>
         </div>
 
@@ -115,7 +109,7 @@
         </footer>
     </div>
 
-    <!-- MODAL -->
+    <!-- MODAL (GIỮ NGUYÊN) -->
     <div id="dictationModal" class="modal hidden">
         <div class="modal-content" style="padding: 30px; width: 400px; text-align: center;">
             <h2 style="margin-bottom: 20px;">Upload Dictation</h2>
@@ -152,12 +146,10 @@
     <audio id="player" class="hidden"></audio>
     <button id="dictationReplayBtn" class="hidden"></button>
 
+    <!-- CHỈ GIỮ LẠI DICTATION-APP.JS -->
     <script type="module" src="scripts/dictation-app.js"></script>
-    <script type="module" src="scripts/dictation.js"></script>
-    <script type="module">
-        import { initDictation } from "./scripts/dictation.js";
-        initDictation();
-    </script>
+    
+    <!-- ĐÃ XÓA CÁC SCRIPT THỪA -->
 </body>
 
 </html>

@@ -1,9 +1,12 @@
 // /scripts/dictation.js (FIXED VERSION)
 import { DOM, STATE, resetState } from "./state.js";
 import { displayText } from "./renderer.js";
-import { SuperAudioPlayer } from "./superAudioPlayer.js";
 
-const superPlayer = new SuperAudioPlayer();
+// XÓA IMPORT SuperAudioPlayer vì không tạo mới ở đây nữa
+// import { SuperAudioPlayer } from "./superAudioPlayer.js";
+
+// Khai báo biến để giữ tham chiếu (không new)
+let superPlayer;
 
 /* ============================================================
    HELPERS
@@ -23,44 +26,104 @@ function stripDictationMarkup(raw) {
         .replace(/\*\*(.+?)\*\*/g, "$1") : "";
 }
 
-function parseTSV(content) {
-    return content.split(/\r?\n/).map(line => {
-        const parts = line.trim().split("\t");
-        if (parts.length >= 3)
-            return { audioStart: parseFloat(parts[0]), audioEnd: parseFloat(parts[1]), text: parts.slice(2).join("\t").trim() };
+/* ============================================================
+   HELPERS (UPDATED FOR PARAGRAPHS)
+============================================================ */
 
-        const m = line.match(/^([\d.]+)\s+([\d.]+)\s+(.*)$/);
-        return m ? {
-            audioStart: parseFloat(m[1]),
-            audioEnd: parseFloat(m[2]),
-            text: m[3].trim()
-        } : null;
-    }).filter(Boolean);
+function parseTSV(content) {
+    const lines = content.split(/\r?\n/);
+    const segments = [];
+    let pendingNewParagraph = false; // Cờ đánh dấu đoạn mới
+
+    for (const line of lines) {
+        // 1. Nếu gặp dòng trống -> Bật cờ đoạn mới
+        if (!line.trim()) {
+            pendingNewParagraph = true;
+            continue;
+        }
+
+        // 2. Parse dòng dữ liệu
+        const parts = line.trim().split("\t");
+        let seg = null;
+
+        if (parts.length >= 3) {
+            seg = {
+                audioStart: parseFloat(parts[0]),
+                audioEnd: parseFloat(parts[1]),
+                text: parts.slice(2).join("\t").trim()
+            };
+        } else {
+            const m = line.match(/^([\d.]+)\s+([\d.]+)\s+(.*)$/);
+            if (m) {
+                seg = {
+                    audioStart: parseFloat(m[1]),
+                    audioEnd: parseFloat(m[2]),
+                    text: m[3].trim()
+                };
+            }
+        }
+
+        // 3. Nếu parse thành công, thêm vào danh sách
+        if (seg) {
+            // Nếu trước đó có dòng trống, đánh dấu segment này là đầu đoạn mới
+            if (pendingNewParagraph) {
+                seg.isNewParagraph = true;
+                pendingNewParagraph = false; // Reset cờ
+            }
+            segments.push(seg);
+        }
+    }
+
+    return segments;
 }
+
+// --- TRONG FILE scripts/dictation.js ---
 
 function buildDictationText() {
     const dict = STATE.dictation;
 
-    dict.fullText = "";
-    dict.fullTextRaw = "";
+    dict.fullText = "";     // Chuỗi logic (để so sánh đúng/sai)
+    dict.fullTextRaw = "";  // Chuỗi hiển thị (để render HTML)
     dict.charStarts = [];
 
-    let pos = 0;
+    let pos = 0; // Vị trí ký tự trong chuỗi logic
+
     dict.segments.forEach((seg, idx) => {
         const clean = stripDictationMarkup(seg.text);
         seg.cleanText = clean;
-        dict.charStarts[idx] = pos;
 
-        dict.fullText += clean + (idx < dict.segments.length - 1 ? " " : "");
-        dict.fullTextRaw += seg.text + (idx < dict.segments.length - 1 ? " " : "");
+        // 1. Xác định dấu nối cho HIỂN THỊ (Markdown/HTML)
+        // Nếu là đoạn mới -> \n\n, ngược lại -> khoảng trắng
+        let rawSeparator = "";
+        if (idx > 0) {
+            rawSeparator = seg.isNewParagraph ? "\n\n" : " ";
+        }
 
+        // 2. Xác định dấu nối cho LOGIC (So sánh Input)
+        // QUAN TRỌNG: Luôn dùng 1 dấu cách để đồng bộ với Typing Mode & Renderer
+        // Renderer sẽ convert \n\n thành 1 khoảng trắng khi tạo spans
+        let logicSeparator = "";
+        if (idx > 0) {
+            logicSeparator = " "; 
+        }
+
+        // 3. Xây dựng chuỗi
+        dict.fullTextRaw += rawSeparator + seg.text;
+        dict.fullText += logicSeparator + clean;
+
+        // 4. Tính toán vị trí Audio Start dựa trên chuỗi LOGIC
+        // Vì người dùng sẽ gõ theo chuỗi logic (dấu cách) nên ta phải tính pos theo logicSeparator
+        dict.charStarts[idx] = pos + logicSeparator.length;
+
+        // Cập nhật pos cho vòng lặp sau
         pos = dict.fullText.length;
     });
 }
 
 function playSegment(index) {
     const seg = STATE.dictation.segments[index];
-    if (seg) {
+    // Kiểm tra superPlayer tồn tại trước khi gọi
+    if (seg && superPlayer) {
         superPlayer.stop();
         superPlayer.playSegment(seg.audioStart, seg.audioEnd);
     }
@@ -68,19 +131,23 @@ function playSegment(index) {
 
 /* ============================================================
    INIT — prepare UI + load files + bind events
+   THAY ĐỔI: Nhận playerInstance từ bên ngoài
 ============================================================ */
-export function initDictation() {
+export function initDictation(playerInstance) {
+    // Gán player được truyền vào cho biến cục bộ
+    superPlayer = playerInstance;
+
     const {
         dictationBtn,
         dictationModal,
         dictationStartBtn,
         dictationCancelBtn,
         dictationBlindMode,
-        dictationSubInput,   // Thêm tham chiếu
-        dictationAudioInput  // Thêm tham chiếu
+        dictationSubInput,
+        dictationAudioInput
     } = DOM;
 
-    // 1. Logic mở/đóng Modal cũ (Giữ nguyên)
+    // 1. Logic mở/đóng Modal
     dictationBtn.addEventListener("click", () =>
         dictationModal.classList.remove("hidden")
     );
@@ -88,7 +155,7 @@ export function initDictation() {
         dictationModal.classList.add("hidden")
     );
 
-    // 2. Hàm kiểm tra nút Start (Giữ nguyên)
+    // 2. Hàm kiểm tra nút Start
     const readyCheck = () => {
         dictationStartBtn.disabled =
             !dictationSubInput.files.length ||
@@ -99,40 +166,34 @@ export function initDictation() {
     dictationAudioInput.addEventListener("change", readyCheck);
 
     // ============================================================
-    // 3. THÊM LOGIC KÉO THẢ (DRAG & DROP) - CẬP NHẬT
+    // 3. LOGIC KÉO THẢ (DRAG & DROP)
     // ============================================================
-    
-    // Helper: Cập nhật tên nút dựa trên file hiện tại
+
     const updateButtonLabel = () => {
         if (dictationSubInput.files.length > 0) {
             const name = dictationSubInput.files[0].name;
             dictationBtn.textContent = name;
-            dictationBtn.title = name; // Tooltip khi tên quá dài
+            dictationBtn.title = name;
         } else {
             dictationBtn.textContent = "📂 Load File";
             dictationBtn.title = "";
         }
     };
 
-    // Khi kéo file qua nút
     dictationBtn.addEventListener("dragover", (e) => {
         e.preventDefault();
         e.stopPropagation();
         dictationBtn.classList.add("dragging");
-        dictationBtn.textContent = "Drop Text & Audio!"; 
+        dictationBtn.textContent = "Drop Text & Audio!";
     });
 
-    // Khi kéo ra ngoài (Hủy kéo) -> Trả lại tên file cũ (nếu có)
     dictationBtn.addEventListener("dragleave", (e) => {
         e.preventDefault();
         e.stopPropagation();
         dictationBtn.classList.remove("dragging");
-        
-        // Thay vì reset cứng về "Load File", ta kiểm tra xem đã có file chưa
         updateButtonLabel();
     });
 
-    // Khi thả file
     dictationBtn.addEventListener("drop", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -140,28 +201,23 @@ export function initDictation() {
 
         const files = Array.from(e.dataTransfer.files);
         if (!files.length) {
-            updateButtonLabel(); // Trả lại tên cũ nếu không thả file nào
+            updateButtonLabel();
             return;
         }
 
-        // Mở Modal
         dictationModal.classList.remove("hidden");
 
-        // Phân loại file
         let hasText = false;
         let hasAudio = false;
 
         files.forEach(file => {
             const name = file.name.toLowerCase();
-            
-            // Xử lý File Text
             if (name.endsWith(".txt") || name.endsWith(".tsv")) {
                 const dt = new DataTransfer();
                 dt.items.add(file);
                 dictationSubInput.files = dt.files;
                 hasText = true;
-            } 
-            // Xử lý File Audio
+            }
             else if (name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".ogg")) {
                 const dt = new DataTransfer();
                 dt.items.add(file);
@@ -170,24 +226,16 @@ export function initDictation() {
             }
         });
 
-        // Cập nhật trạng thái nút Start trong Modal
         readyCheck();
-
-        // --- CẬP NHẬT TÊN NÚT Ở TOOLBAR ---
         updateButtonLabel();
 
-        // Thông báo nhỏ
         if (files.length === 1) {
-            if (hasText && !dictationAudioInput.files.length) {
-                // Đã có text, thiếu audio
-            } else if (hasAudio && !dictationSubInput.files.length) {
+            if (hasAudio && !dictationSubInput.files.length) {
                 alert("Đã nhận file Audio. Vui lòng chọn thêm file Text!");
             }
         }
     });
 
-    // Xử lý thêm trường hợp: Người dùng chọn file thủ công qua Modal (không kéo thả)
-    // Thì nút bên ngoài cũng nên cập nhật theo
     dictationSubInput.addEventListener("change", () => {
         readyCheck();
         updateButtonLabel();
@@ -224,11 +272,9 @@ export function initDictation() {
         const audioFile = DOM.dictationAudioInput.files[0];
         if (!subFile || !audioFile) return;
 
-        // Set blind mode
         STATE.blindMode = dictationBlindMode.checked;
         DOM.blindModeToggle.checked = STATE.blindMode;
 
-        // Load subtitles
         const reader = new FileReader();
         reader.onload = async (e) => {
             const segments = parseTSV(cleanDictationText(e.target.result));
@@ -238,10 +284,9 @@ export function initDictation() {
             STATE.dictation.currentSegmentIndex = 0;
             STATE.dictation.active = true;
 
-            // Load audio
+            // Load audio vào player được truyền vào
             await superPlayer.load(await audioFile.arrayBuffer());
 
-            // Build full text
             buildDictationText();
 
             dictationModal.classList.add("hidden");
@@ -249,13 +294,19 @@ export function initDictation() {
             STATE.mode = "dictation";
             resetState();
 
-            // render text
             displayText(STATE.dictation.fullTextRaw);
 
             DOM.textInput.value = "";
-            DOM.textInput.disabled = true;  // chờ user bấm Start
-            DOM.startBtn.disabled = false;
-            DOM.startBtn.textContent = "Start";
+            DOM.textInput.disabled = true;
+            DOM.startBtn.disabled = false; // Nút start ảo (nếu có)
+
+            // Cập nhật Action Toggle UI (Start/Stop button)
+            if (DOM.actionToggle) {
+                DOM.actionToggle.checked = false;
+                DOM.actionToggle.disabled = false;
+                DOM.actionLabel.textContent = "Start";
+                DOM.actionLabel.style.color = "var(--correct-text)";
+            }
 
             document.querySelector("header h1").textContent = subFile.name;
 
@@ -265,8 +316,7 @@ export function initDictation() {
     });
 
     /* ========================================================
-       🔥 Nhận event từ Input Engine
-       Khi segment finished → play segment mới
+       Segment Done Event
     ======================================================== */
     document.addEventListener("dictation:segmentDone", (e) => {
         const next = e.detail + 1;
@@ -277,4 +327,3 @@ export function initDictation() {
         }
     });
 }
-
