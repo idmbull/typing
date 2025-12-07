@@ -1,4 +1,4 @@
-// /scripts/dictation-loader.js
+// --- START OF FILE scripts/dictation-loader.js ---
 
 import { convertMarkdownToPlain, convertInlineFootnotes } from "./utils.js";
 
@@ -10,74 +10,117 @@ function cleanText(text) {
         .replace(/[“”]/g, "\"")
         .replace(/[—–]/g, "-");
 }
+
 /* ============================================================
    1) Load playlist từ dictation.json
 ============================================================ */
 export async function loadDictationPlaylist() {
     const resp = await fetch("dictation.json");
     if (!resp.ok) throw new Error("Không load được dictation.json");
-    return await resp.json();   // ["d01.txt", "d02.txt", ...]
+    return await resp.json();
 }
 
 /* ============================================================
    2) Load segments từ texts/dictation/*.txt
-   Format mỗi dòng:
-   start<TAB>end<TAB>text-with-markdown-+-tooltip
+   CẬP NHẬT: Logic phát hiện dòng trống để chia đoạn
 ============================================================ */
 export async function loadDictationSegments(filename) {
-    // Đúng thư mục mới: texts/dictation/
     const resp = await fetch(`texts/dictation/${filename}`);
     if (!resp.ok) throw new Error("Không tìm thấy file: " + filename);
 
     let raw = await resp.text();
     raw = cleanText(raw);
 
-    const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+    const lines = raw.split(/\r?\n/);
     const segments = [];
+    let pendingNewParagraph = false; // Cờ đánh dấu đoạn mới
 
     for (const line of lines) {
-        const parts = line.split("\t");
-        if (parts.length < 3) continue;
+        // 1. Nếu dòng trống -> Đánh dấu chuẩn bị sang đoạn mới
+        if (!line.trim()) {
+            pendingNewParagraph = true;
+            continue;
+        }
 
-        const start = parseFloat(parts[0]);
-        const end = parseFloat(parts[1]);
-        const text = parts.slice(2).join("\t").trim();
+        // 2. Parse dữ liệu (Tab-separated hoặc Space-separated)
+        const parts = line.trim().split("\t");
+        let start, end, text;
 
-        // HTML có footnote
+        if (parts.length >= 3) {
+            start = parseFloat(parts[0]);
+            end = parseFloat(parts[1]);
+            text = parts.slice(2).join("\t").trim();
+        } else {
+            // Fallback regex cho định dạng cũ
+            const m = line.match(/^([\d.]+)\s+([\d.]+)\s+(.*)$/);
+            if (m) {
+                start = parseFloat(m[1]);
+                end = parseFloat(m[2]);
+                text = m[3].trim();
+            } else {
+                continue; // Bỏ qua dòng lỗi
+            }
+        }
+
+        // 3. Xử lý text (Markdown / HTML)
         const withFootnotes = convertInlineFootnotes(text);
-
-        // Plain text cho engine so sánh
         const clean = convertMarkdownToPlain(text.replace(/\^\[(.*?)\]/g, ""));
 
-        segments.push({
+        // 4. Tạo segment object
+        const seg = {
             audioStart: start,
             audioEnd: end,
             rawText: text,
             displayHTML: withFootnotes,
             cleanText: clean
-        });
+        };
+
+        // Gắn cờ đoạn mới nếu cần
+        if (pendingNewParagraph) {
+            seg.isNewParagraph = true;
+            pendingNewParagraph = false;
+        }
+
+        segments.push(seg);
     }
 
     return segments;
 }
 
 /* ============================================================
-   3) Ghép segments → fullTextRaw, fullText, charStarts[]
+   3) Ghép segments -> Full Text
+   CẬP NHẬT: Logic nối chuỗi \n\n cho hiển thị, " " cho logic
 ============================================================ */
 export function buildDictationText(segments) {
-    let fullTextRaw = "";
-    let fullText = "";
+    let fullTextRaw = ""; // Chuỗi hiển thị (HTML/Markdown)
+    let fullText = "";    // Chuỗi logic (Input check)
     const charStarts = [];
 
     let pos = 0;
 
     segments.forEach((seg, idx) => {
-        charStarts[idx] = pos;
+        // Tính toán vị trí bắt đầu cho Audio Segment (dựa trên chuỗi logic)
+        // Lưu ý: Logic separator luôn là 1 ký tự (dấu cách)
+        // ngoại trừ segment đầu tiên không có separator.
+        const logicSeparatorLength = (idx > 0) ? 1 : 0; 
+        
+        // Vị trí bắt đầu của segment này = Vị trí cũ + separator
+        charStarts[idx] = pos + logicSeparatorLength;
 
-        const sep = idx < segments.length - 1 ? " " : "";
+        // 1. Xác định dấu nối hiển thị
+        let rawSeparator = "";
+        if (idx > 0) {
+            rawSeparator = seg.isNewParagraph ? "\n\n" : " ";
+        }
 
-        fullTextRaw += seg.rawText + sep;
-        fullText += seg.cleanText + sep;
+        // 2. Xác định dấu nối logic (Luôn là space để đồng bộ với Typing Engine)
+        let logicSeparator = "";
+        if (idx > 0) {
+            logicSeparator = " ";
+        }
+
+        fullTextRaw += rawSeparator + seg.rawText;
+        fullText += logicSeparator + seg.cleanText;
 
         pos = fullText.length;
     });
@@ -86,7 +129,7 @@ export function buildDictationText(segments) {
 }
 
 /* ============================================================
-   4) Tìm file mp3 cùng tên trong texts/dictation/
+   4) Tìm file mp3
 ============================================================ */
 export async function findDictationAudio(filename) {
     const base = filename.replace(/\.[^.]+$/, "");
