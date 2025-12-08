@@ -91,10 +91,10 @@
 <pre id="output" placeholder="Preview output..."></pre>
 
 <script>
-let labels = [];         // {start, end}
-let dialogues = [];      // tất cả dòng (kể cả trống)
-let cleanDialogue = [];  // chỉ các dòng có chữ
-let emptyLines = [];     // index dòng trống
+let labels = [];
+let dialogues = [];
+let cleanDialogue = [];
+let emptyLines = [];
 
 // -----------------------
 // File Reader Helper
@@ -112,7 +112,6 @@ function readFileAsync(file) {
 // -----------------------
 function setupDropzone(id, statusId, callback) {
     const zone = document.getElementById(id);
-    const status = document.getElementById(statusId);
 
     zone.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -133,7 +132,8 @@ function setupDropzone(id, statusId, callback) {
         const text = await readFileAsync(file);
         callback(text);
 
-        zone.innerHTML = zone.innerHTML.split("<div")[0]; // giữ text chính
+        // Cập nhật UI
+        zone.innerHTML = zone.innerHTML.split("<div")[0];
         zone.insertAdjacentHTML(
             "beforeend",
             `<div id="${statusId}" class="status"><b>${file.name}</b> loaded ✔</div>`
@@ -144,8 +144,7 @@ function setupDropzone(id, statusId, callback) {
 }
 
 // -----------------------
-// Parse Audacity label file
-// Format: start[tab/space]end[tab/space]optional label
+// Parse Labels
 // -----------------------
 function parseLabels(text) {
     labels = text
@@ -153,17 +152,12 @@ function parseLabels(text) {
         .filter(line => line.trim().length > 0)
         .map(line => {
             const parts = line.trim().split(/\s+/);
-            return {
-                start: parts[0],
-                end: parts[1]
-            };
+            return { start: parts[0], end: parts[1] };
         });
-
-    console.log("Parsed labels:", labels);
 }
 
 // -----------------------
-// Parse dialogue file (KEEP EMPTY LINES POSITION)
+// Parse Dialogue (keep empty lines)
 // -----------------------
 function parseDialogue(text) {
     const lines = text.split(/\r?\n/);
@@ -174,47 +168,64 @@ function parseDialogue(text) {
 
     lines.forEach((line, index) => {
         if (line.trim() === "") {
-            emptyLines.push(index);          // lưu index dòng trống
+            emptyLines.push(index);
         } else {
-            cleanDialogue.push(line);        // chỉ lấy câu có chữ
+            cleanDialogue.push(line);
         }
     });
-
-    console.log("Dialogue lines (raw):", dialogues);
-    console.log("Clean dialogue:", cleanDialogue);
-    console.log("Empty line indexes:", emptyLines);
 }
 
 // -----------------------
-// Enable merge if ready
+// Enable merge + CHECK LINE COUNT
 // -----------------------
 function enableMergeIfReady() {
     const btn = document.getElementById("mergeBtn");
+
     if (labels.length > 0 && cleanDialogue.length > 0) {
+        
+        // ⚠️ Kiểm tra số dòng có khớp không
+        if (labels.length !== cleanDialogue.length) {
+            btn.disabled = true;
+
+            alert(
+                `⚠️ Cảnh báo!\n\n` +
+                `Labels ${labels.length} dòng.\n` +
+                `Dialogue ${cleanDialogue.length} dòng.\n\n` +
+                `Kiểm tra lại dữ liệu`
+            );
+            return;
+        }
+
         btn.disabled = false;
     }
 }
 
 // -----------------------
-// Merge logic WITH EMPTY LINE RESTORE
+// Merge logic
 // -----------------------
 function mergeFiles() {
+
+    // Chặn merge nếu số dòng không khớp
+    if (labels.length !== cleanDialogue.length) {
+        alert(
+            `❌ Không thể merge!\n` +
+            `Số dòng label (${labels.length}) ≠ số dòng dialogue có chữ (${cleanDialogue.length}).`
+        );
+        return;
+    }
+
     let merged = [];
 
-    const count = Math.min(labels.length, cleanDialogue.length);
-
-    // Bước 1 — ghép timestamp + các câu có chữ (bỏ dòng trống)
-    for (let i = 0; i < count; i++) {
+    // Bước 1 — ghép timestamp + câu có chữ
+    for (let i = 0; i < labels.length; i++) {
         merged.push(`${labels[i].start}\t${labels[i].end}\t${cleanDialogue[i]}`);
     }
 
-    // Bước 2 — chèn lại các dòng trống đúng vị trí dựa trên index của Dialogue.txt gốc
+    // Bước 2 — chèn lại dòng trống
     emptyLines.forEach(idx => {
-        // Giới hạn: chỉ chèn nếu idx <= độ dài hiện tại (tránh nhảy quá xa)
         if (idx <= merged.length) {
             merged.splice(idx, 0, "");
         } else {
-            // nếu index lớn hơn độ dài hiện tại, thêm dòng trống vào cuối
             merged.push("");
         }
     });
