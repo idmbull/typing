@@ -1,30 +1,30 @@
 /* ==========================================================================
-   1. VARIABLES & THEME SETUP (ORIGINAL COLORS PRESERVED)
+   1. VARIABLES & THEME CONFIGURATION
    ========================================================================== */
 :root {
-    /* --- Fonts --- */
+    /* Fonts */
     --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --font-mono: 'PT Mono', 'Consolas', 'Monaco', monospace;
 
-    /* --- Light Theme Colors (Original) --- */
+    /* Colors - Light Theme (Default) */
     --bg-primary: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
     --container-bg: rgba(255, 255, 255, 0.96);
-    /* Tăng độ đục một chút cho rõ chữ */
     --header-bg: linear-gradient(to right, #4a00e0, #8e2de2);
 
     --text-primary: #333;
     --text-secondary: #666;
-    --text-light: white;
+    --text-light: #fff;
+    --text-muted: #888;
 
     --accent-color: #4a00e0;
     --accent-gradient: linear-gradient(to right, #4a00e0, #8e2de2);
 
     --correct-color: #28a745;
     --incorrect-color: #e74c3c;
+    --incorrect-bg: rgba(231, 76, 60, 0.15);
 
     --section-bg: #f8f9fa;
     --border-color: #e9ecef;
-
     --shadow-color: rgba(0, 0, 0, 0.15);
 
     --toggle-bg: #dfe6e9;
@@ -32,31 +32,168 @@
 }
 
 [data-theme="dark"] {
-    /* --- Dark Theme Colors (Original) --- */
+    /* Colors - Dark Theme */
     --bg-primary: linear-gradient(135deg, #2d0b59 0%, #0d2f6c 100%);
     --container-bg: rgba(30, 30, 40, 0.96);
     --header-bg: linear-gradient(to right, #3a0080, #6a1b9a);
 
     --text-primary: #f0f0f0;
     --text-secondary: #b0b0b0;
+    --text-muted: #666;
 
     --accent-color: #8e2de2;
     --accent-gradient: linear-gradient(to right, #6a1b9a, #8e2de2);
 
     --correct-color: #4caf50;
     --incorrect-color: #f44336;
+    --incorrect-bg: rgba(244, 67, 54, 0.15);
 
     --section-bg: #2a2a3a;
     --border-color: #444;
-
     --shadow-color: rgba(0, 0, 0, 0.4);
 
     --toggle-bg: #555;
     --toggle-checked-bg: #8e2de2;
 }
 
+[data-theme="idm"] {
+    /* Colors - Dark Theme */
+    --bg-primary: #212121;
+    --container-bg: rgba(30, 30, 40, 0.96);
+    --header-bg: rgba(30, 30, 40, 0.96);
+
+    --text-primary: #f0f0f0;
+    --text-secondary: #b0b0b0;
+    --text-muted: #666;
+
+    --accent-color: #8e2de2;
+    --accent-gradient: linear-gradient(to right, #6a1b9a, #8e2de2);
+
+    --correct-color: #4caf50;
+    --incorrect-color: #f44336;
+    --incorrect-bg: rgba(244, 67, 54, 0.15);
+
+    --section-bg: #2a2a3a;
+    --border-color: #444;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+
+    --toggle-bg: #555;
+    --toggle-checked-bg: #8e2de2;
+}
+
+/* --- THEME: OCEAN (Xanh dương mát mẻ) --- */
+[data-theme="ocean"] {
+    --bg-primary: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+    --container-bg: rgba(240, 248, 255, 0.95);
+    --header-bg: linear-gradient(to right, #00c6ff, #0072ff);
+
+    --text-primary: #003366;
+    --text-secondary: #4a6fa5;
+    --text-muted: #889bb5;
+
+    --accent-color: #0072ff;
+    --accent-gradient: linear-gradient(to right, #00c6ff, #0072ff);
+
+    --section-bg: #e6f7ff;
+    --border-color: #b3d9ff;
+    --toggle-checked-bg: #0072ff;
+}
+
+/* --- THEME: FOREST (Xanh lá thư giãn) --- */
+[data-theme="forest"] {
+    --bg-primary: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+    --container-bg: rgba(250, 255, 245, 0.96);
+    --header-bg: linear-gradient(to right, #11998e, #38ef7d);
+
+    --text-primary: #1b4d3e;
+    --text-secondary: #4a7c59;
+    --text-muted: #8aa895;
+
+    --accent-color: #2e8b57;
+    --accent-gradient: linear-gradient(to right, #11998e, #38ef7d);
+
+    --section-bg: #f0fff4;
+    --border-color: #c3e6cb;
+    --toggle-checked-bg: #2e8b57;
+    --correct-color: #27ae60;
+}
+
+/* --- THEME: COFFEE (Sepia - Đọc sách, dịu mắt) --- */
+[data-theme="coffee"] {
+    --bg-primary: #d5cabd;
+    /* Màu giấy cũ */
+    --container-bg: #fdf6e3;
+    /* Solarized Light style */
+    --header-bg: #5d4037;
+    /* Nâu cà phê */
+
+    --text-primary: #3e2723;
+    --text-secondary: #6d4c41;
+    --text-muted: #a1887f;
+    --text-light: #efebe9;
+
+    --accent-color: #8d6e63;
+    --accent-gradient: linear-gradient(to right, #8d6e63, #6d4c41);
+
+    --section-bg: #efebe9;
+    --border-color: #d7ccc8;
+    --toggle-bg: #d7ccc8;
+    --toggle-checked-bg: #5d4037;
+}
+
+/* --- THEME: CYBERPUNK (Tương phản cao, Neon) --- */
+[data-theme="cyberpunk"] {
+    --bg-primary: #000000;
+    --container-bg: rgba(10, 10, 10, 0.95);
+    --header-bg: linear-gradient(to right, #ff00cc, #333399);
+
+    --text-primary: #00ff00;
+    /* Matrix green text */
+    --text-secondary: #00ccff;
+    --text-muted: #ff00cc;
+
+    --accent-color: #ff0099;
+    --accent-gradient: linear-gradient(to right, #ff00cc, #333399);
+
+    --correct-color: #00ff00;
+    --incorrect-color: #ff0000;
+    --incorrect-bg: rgba(255, 0, 0, 0.3);
+
+    --section-bg: #111;
+    --border-color: #333;
+    --toggle-bg: #333;
+    --toggle-checked-bg: #ff0099;
+
+    /* Font Mono cho đúng chất code */
+    --font-ui: 'Courier New', Courier, monospace;
+}
+
+/* --- THEME: DRACULA (Dark Mode code editor) --- */
+[data-theme="dracula"] {
+    --bg-primary: #282a36;
+    --container-bg: #44475a;
+    --header-bg: #6272a4;
+
+    --text-primary: #f8f8f2;
+    --text-secondary: #bd93f9;
+    /* Purple text */
+    --text-muted: #6272a4;
+
+    --accent-color: #ff79c6;
+    /* Pink cursor */
+    --accent-gradient: linear-gradient(to right, #bd93f9, #ff79c6);
+
+    --correct-color: #50fa7b;
+    --incorrect-color: #ff5555;
+    --incorrect-bg: rgba(255, 85, 85, 0.2);
+
+    --section-bg: #282a36;
+    --border-color: #6272a4;
+    --toggle-checked-bg: #bd93f9;
+}
+
 /* ==========================================================================
-   2. GLOBAL RESET & SCROLLBAR
+   2. GLOBAL RESET & BASE STYLES
    ========================================================================== */
 * {
     box-sizing: border-box;
@@ -76,11 +213,7 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
-strong {
-    font-weight: normal;
-}
-
-/* Custom Scrollbar theo tông màu gốc */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -100,8 +233,21 @@ strong {
     background: var(--accent-color);
 }
 
+/* Hidden Input Area for Typing */
+.input-area {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+strong {
+    font-weight: normal;
+}
+
 /* ==========================================================================
-   3. CONTAINER & HEADER
+   3. MAIN LAYOUT
    ========================================================================== */
 .container {
     width: 100%;
@@ -113,7 +259,6 @@ strong {
     display: flex;
     flex-direction: column;
     backdrop-filter: blur(10px);
-    /* Hiệu ứng kính */
     transition: all 0.3s ease;
 }
 
@@ -138,7 +283,7 @@ header h1 {
 }
 
 /* ==========================================================================
-   4. STATS BAR (DASHBOARD STYLE)
+   4. STATS DASHBOARD
    ========================================================================== */
 .stats {
     display: grid;
@@ -159,7 +304,6 @@ header h1 {
     position: relative;
 }
 
-/* Đường kẻ dọc ngăn cách giữa các stat */
 .stat-item:not(:last-child)::after {
     content: "";
     position: absolute;
@@ -191,17 +335,16 @@ header h1 {
     background-color: var(--section-bg);
     border-radius: 12px;
     margin: 15px 25px;
-    /* border-left: 4px solid var(--accent-color);  <-- Bỏ border trái, dùng border bao quanh */
     border: 2px solid transparent;
+    /* Ready for focus state */
     height: 50vh;
-    /* Chiều cao cố định tương đối */
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: border-color 0.2s;
+    scroll-behavior: smooth;
 }
-
 
 .text-display {
     padding: 25px;
@@ -209,7 +352,6 @@ header h1 {
     font-size: 1.2rem;
     font-family: var(--font-mono);
     color: var(--text-secondary);
-    /* Text chưa gõ màu nhạt */
     white-space: pre-wrap;
     word-wrap: break-word;
 }
@@ -219,58 +361,84 @@ header h1 {
     border-radius: 2px;
 }
 
-/* --- Typing States --- */
+/* --- State Classes --- */
 .correct {
     color: var(--correct-color);
-    /* background-color: rgba(40, 167, 69, 0.08); */
 }
 
 .incorrect {
     color: var(--incorrect-color);
-    background-color: rgba(231, 76, 60, 0.15);
+    background-color: var(--incorrect-bg);
     text-decoration: underline wavy;
 }
 
 .current {
     background-color: var(--accent-color);
-    color: white !important;
-    /* box-shadow: 0 0 0 2px var(--accent-color); */
-    border-radius: 3px;
+    color: var(--text-light) !important;
+    border-radius: 2px;
     animation: softPulse 2s infinite;
+}
+
+/* --- Special Characters (Enter Key) --- */
+.newline-char {
+    color: transparent;
+    /* Mặc định ẩn ký tự mũi tên */
+    display: inline-block;
+    min-width: 0.5em;
+    height: 1.2em;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    user-select: none;
+    line-height: 1;
+}
+
+/* Khi con trỏ ở Enter */
+.newline-char.current {
+    color: var(--text-light) !important;
+    background-color: var(--accent-color);
+    opacity: 1;
+    padding: 0 2px;
+}
+
+.newline-char.incorrect {
+    color: var(--incorrect-color);
+    background-color: var(--incorrect-bg);
+}
+
+/* Fix thẻ BR để xuống dòng đúng */
+br.visual-break {
+    user-select: none;
+}
+
+p .visual-break:last-child {
+    display: none;
 }
 
 /* --- Blind Mode --- */
 .blind-mode .blind-hidden {
     color: transparent !important;
     background: transparent;
-    /* text-shadow: 0 0 5px rgba(128, 128, 128, 0.5); */
-    /* Blur nhẹ text ẩn */
+    text-shadow: none;
 }
 
 .blind-mode .current {
     color: transparent !important;
     background-color: var(--accent-color);
     width: 10px;
-    /* Chỉ hiện 1 vạch cursor */
+    /* Cursor dạng vạch */
     display: inline-block;
 }
 
-/* --- Hidden Input --- */
-.input-area {
-    position: absolute;
-    width: 0;
-    height: 0;
-    opacity: 0;
-    overflow: hidden;
-}
-
-textarea {
-    width: 0;
-    height: 0;
+/* Cursor tại Enter trong Blind Mode */
+.blind-mode .newline-char.current {
+    color: var(--text-light) !important;
+    background-color: var(--accent-color);
+    width: auto;
+    min-width: 14px;
 }
 
 /* ==========================================================================
-   6. TOOLBAR & CONTROLS
+   6. CONTROLS & TOOLBAR
    ========================================================================== */
 .toolbar {
     padding: 0 25px;
@@ -282,11 +450,10 @@ textarea {
     flex-wrap: wrap;
     align-items: center;
     gap: 15px;
-    /* Khoảng cách đều giữa các item */
     width: 100%;
 }
 
-/* --- Toggle Switch (New Design) --- */
+/* Toggle Switch */
 .toggle-container {
     display: flex;
     align-items: center;
@@ -342,19 +509,7 @@ input:checked+.slider:before {
     transform: translateX(22px);
 }
 
-input:disabled+.slider {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Label Start/Stop */
-#actionLabel {
-    min-width: 40px;
-    font-weight: 700;
-    transition: color 0.2s;
-}
-
-/* --- Volume Control (Clean) --- */
+/* Volume Control */
 .mini-volume-control {
     display: flex;
     align-items: center;
@@ -387,17 +542,24 @@ input:disabled+.slider {
     margin-top: -5px;
     border: 2px solid var(--container-bg);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    transition: transform 0.1s;
 }
 
-.mini-volume-control input[type="range"]:active::-webkit-slider-thumb {
-    transform: scale(1.2);
+/* ==========================================================================
+   7. FOOTER ACTIONS
+   ========================================================================== */
+footer {
+    border-top: 1px solid var(--border-color);
+    padding: 20px 25px;
+    background-color: var(--container-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 
-/* --- Navigation Button (Pill Style) --- */
+/* Buttons */
 .btn-icon {
-    margin-left: auto;
-    /* Đẩy sang phải cùng */
     background: var(--section-bg);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
@@ -411,6 +573,7 @@ input:disabled+.slider {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
 }
 
 .btn-icon:hover {
@@ -421,41 +584,25 @@ input:disabled+.slider {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* ==========================================================================
-   7. FOOTER (File & Selects)
-   ========================================================================== */
-footer {
-    border-top: 1px solid var(--border-color);
-    padding: 20px 25px;
-    background-color: var(--container-bg);
-    /* Đục hơn chút */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-/* Special Styling cho nút Load File (Gradient Gốc) */
+/* Load Button Special Style */
 #fileLoaderBtn,
 #dictationBtn {
     background: var(--accent-gradient);
-    /* Màu gốc */
     color: white;
     border: none;
     box-shadow: 0 4px 10px rgba(74, 0, 224, 0.3);
     min-width: 130px;
     max-width: 220px;
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 #fileLoaderBtn:hover,
 #dictationBtn:hover {
+    background: linear-gradient(to right, #5e00ff, #a745ff);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(74, 0, 224, 0.4);
-    background: linear-gradient(to right, #5e00ff, #a745ff);
+    color: white;
 }
 
 /* Dragging State */
@@ -468,11 +615,10 @@ footer {
     transform: scale(1.05);
 }
 
-/* Selects */
+/* Select Inputs */
 select {
     padding: 8px 15px;
     border-radius: 20px;
-    /* Bo tròn giống button */
     border: 1px solid var(--border-color);
     background: var(--section-bg);
     color: var(--text-primary);
@@ -481,7 +627,6 @@ select {
     cursor: pointer;
     transition: border-color 0.2s;
     max-width: 250px;
-    text-overflow: ellipsis;
 }
 
 select:hover,
@@ -490,7 +635,7 @@ select:focus {
 }
 
 /* ==========================================================================
-   8. MODAL (Dictation Upload)
+   8. MODAL (DICTATION UPLOAD)
    ========================================================================== */
 .modal {
     position: fixed;
@@ -500,7 +645,7 @@ select:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 1000;
     opacity: 1;
     transition: opacity 0.3s ease;
 }
@@ -522,6 +667,7 @@ select:focus {
     transform: translateY(0);
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 1px solid var(--border-color);
+    text-align: center;
 }
 
 .modal.hidden .modal-content {
@@ -529,10 +675,9 @@ select:focus {
 }
 
 .modal h2 {
-    text-align: center;
-    margin-bottom: 20px;
     color: var(--accent-color);
     font-size: 1.5rem;
+    margin-bottom: 20px;
 }
 
 .modal input[type="file"] {
@@ -550,46 +695,14 @@ select:focus {
     border-color: var(--accent-color);
 }
 
-.modal-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-.modal-btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.modal-btn:not(.btn-primary) {
-    background: var(--section-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.modal-btn.btn-primary {
-    background: var(--accent-gradient);
-    color: white;
-}
-
-.modal-btn:hover {
-    transform: translateY(-2px);
-}
-
-.modal-btn:disabled {
+.modal button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
+    background: var(--text-secondary);
 }
 
 /* ==========================================================================
-   9. TOOLTIP (Floating with Arrow)
+   9. TOOLTIP (FLOATING)
    ========================================================================== */
 .tooltip-word {
     border-bottom: 1px dotted var(--text-secondary);
@@ -601,7 +714,6 @@ select:focus {
     position: fixed;
     padding: 12px 16px;
     background: linear-gradient(135deg, #4a00e0, #8e2de2);
-    /* Màu gốc */
     color: white;
     border-radius: 10px;
     font-size: 1rem;
@@ -610,7 +722,7 @@ select:focus {
     transform: translateY(5px) scale(0.95);
     transition: opacity 0.2s ease-out, transform 0.2s ease-out;
     box-shadow: 0 8px 24px rgba(74, 0, 224, 0.35);
-    z-index: 9999;
+    z-index: 2000;
     max-width: 320px;
     line-height: 1.5;
 }
@@ -620,7 +732,7 @@ select:focus {
     transform: translateY(0) scale(1);
 }
 
-/* --- Mũi tên (Arrow) --- */
+/* Tooltip Arrows */
 #globalTooltip::after {
     content: "";
     position: absolute;
@@ -629,46 +741,82 @@ select:focus {
     border-style: solid;
 }
 
-/* 1. Tooltip nằm TRÊN (Arrow trỏ xuống) */
 #globalTooltip.pos-top::after {
     bottom: -8px;
-    /* Đẩy mũi tên xuống dưới tooltip */
     left: var(--arrow-left, 50%);
     border-width: 8px 8px 0 8px;
     border-color: #8e2de2 transparent transparent transparent;
-    /* Màu khớp với cuối gradient */
 }
 
-/* 2. Tooltip nằm DƯỚI (Arrow trỏ lên) */
 #globalTooltip.pos-bottom::after {
     top: -8px;
-    /* Đẩy mũi tên lên trên tooltip */
     left: var(--arrow-left, 50%);
     border-width: 0 8px 8px 8px;
     border-color: transparent transparent #8e2de2 transparent;
-    /* Màu khớp với đầu gradient */
-}
-
-/* 3. Tooltip nằm TRÁI (Arrow trỏ phải) */
-#globalTooltip.pos-left::after {
-    right: -8px;
-    top: var(--arrow-top, 50%);
-    transform: translateY(-50%);
-    border-width: 8px 0 8px 8px;
-    border-color: transparent transparent transparent #8e2de2;
-}
-
-/* 4. Tooltip nằm PHẢI (Arrow trỏ trái) */
-#globalTooltip.pos-right::after {
-    left: -8px;
-    top: var(--arrow-top, 50%);
-    transform: translateY(-50%);
-    border-width: 8px 8px 8px 0;
-    border-color: transparent #4a00e0 transparent transparent;
 }
 
 /* ==========================================================================
-   10. MOBILE RESPONSIVE
+   10. UTILITIES & ANIMATIONS
+   ========================================================================== */
+.hidden {
+    display: none !important;
+}
+
+/* Speaker Label Style for Dictation */
+.speaker-label {
+    font-weight: 700;
+    color: var(--accent);
+    margin-right: 8px;
+    /* user-select: none; */
+    /* Không cho bôi đen */
+    pointer-events: none;
+    /* Không cho click vào để tránh lỗi cursor */
+    display: inline-block;
+    font-size: 0.9em;
+    background: rgba(0, 0, 0, 0.03);
+    padding: 2px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.speaker-label span {
+    /* Đảm bảo các ký tự con bên trong (do wrapChars tạo ra) cũng không bị style đè */
+    color: inherit !important;
+    background: none !important;
+}
+
+/* Đảm bảo chế độ Blind Mode không ẩn luôn tên người nói */
+.blind-mode .speaker-label span.blind-hidden {
+    color: inherit !important;
+    background: transparent !important;
+    text-shadow: none !important;
+}
+
+/* Trong Dark Mode chỉnh màu lại chút cho đẹp */
+[data-theme="dark"] .speaker-label {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="idm"] .speaker-label {
+    background: rgb(117 117 117 / 10%);
+}
+
+@keyframes softPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(74, 0, 224, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 4px rgba(74, 0, 224, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(74, 0, 224, 0);
+    }
+}
+
+/* ==========================================================================
+   11. RESPONSIVE DESIGN
    ========================================================================== */
 @media (max-width: 768px) {
     .container {
@@ -688,8 +836,6 @@ select:focus {
     .stat-item:nth-child(2)::after {
         display: none;
     }
-
-    /* Xóa vạch kẻ dòng 1 */
 
     .text-display-container {
         height: 35vh;
@@ -713,8 +859,6 @@ select:focus {
         width: 100%;
         justify-content: center;
         margin-top: 10px;
-        order: 10;
-        /* Đẩy xuống cuối */
     }
 
     .mini-volume-control {

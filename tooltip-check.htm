@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tooltip Syntax Checker</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            margin: 18px;
+            color: #111;
+        }
+
+        h1 {
+            margin: 6px 0 12px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 360px;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        pre.result {
+            white-space: pre-wrap;
+            background: #f8f9fb;
+            padding: 12px;
+            border-radius: 6px;
+            min-height: 360px;
+            overflow: auto;
+            font-family: monospace;
+        }
+
+        .controls {
+            margin-bottom: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+
+        input[type=file] {
+            display: inline-block;
+        }
+
+        .errors {
+            margin-top: 12px;
+            max-height: 360px;
+            overflow: auto;
+            border-left: 4px solid #d33;
+            padding: 8px 12px;
+            background: #fff6f6;
+        }
+
+        .ok {
+            border-left: 4px solid #2b9;
+            background: #f6fffb;
+            padding: 8px 12px;
+        }
+
+        .err-item {
+            margin-bottom: 8px;
+        }
+
+        .highlight-word {
+            background: rgba(255, 230, 180, 0.9);
+        }
+
+        .highlight-phrase {
+            background: rgba(180, 225, 255, 0.85);
+            font-weight: 700;
+        }
+
+        .highlight-sentence {
+            background: rgba(200, 255, 200, 0.85);
+        }
+
+        .meta {
+            margin-top: 8px;
+            color: #444;
+            font-size: 13px;
+        }
+
+        code.small {
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .footer {
+            margin-top: 12px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .suggest {
+            color: #083;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tooltip Syntax Checker</h1>
+    <div class="meta">
+        Kiểm tra cú pháp chú thích: <code class="small">Word^[Note]</code>, <code
+            class="small">**Phrase**^[Note]</code>, <code class="small">Sentence.^[Note]</code>
+    </div>
+
+    <div class="controls">
+        <input id="fileInput" type="file" accept=".txt,.md,.tsv,text/plain" />
+        <button id="sampleBtn">Chèn mẫu ví dụ</button>
+        <button id="checkBtn">Kiểm tra ngay</button>
+        <button id="clearBtn">Xóa</button>
+        <label><input id="liveCheck" type="checkbox" checked /> Kiểm tra tức thì</label>
+    </div>
+
+    <div class="layout">
+        <div class="panel">
+            <div><strong>Văn bản (dán hoặc mở file):</strong></div>
+            <textarea id="inputArea" placeholder="Dán nội dung .txt/.md/.tsv vào đây..."></textarea>
+        </div>
+
+        <div class="panel">
+            <div><strong>Kết quả & markup:</strong></div>
+            <pre id="render" class="result" aria-live="polite"></pre>
+            <div id="status" class="meta"></div>
+        </div>
+    </div>
+
+    <div id="errorsBox" class="errors" style="display:none"></div>
+    <div id="okBox" class="ok" style="display:none">Không tìm thấy lỗi cú pháp chính (những kiểm tra cơ bản).</div>
+
+    <div class="footer">
+        Ghi chú: công cụ này kiểm tra các lỗi cú pháp phổ biến theo quy tắc bạn mô tả. Nó không thay thế kiểm tra ngữ
+        nghĩa hoặc các trường hợp phức tạp (ví dụ: chú thích nằm trên nhiều dòng, hoặc bôi đậm bắt đầu ở dòng trước).
+        Tuy nhiên nó cung cấp vị trí dòng/cột và gợi ý sửa nhanh.
+    </div>
+
+    <script>
+        (function () {
+            const ta = document.getElementById('inputArea');
+            const render = document.getElementById('render');
+            const checkBtn = document.getElementById('checkBtn');
+            const fileInput = document.getElementById('fileInput');
+            const sampleBtn = document.getElementById('sampleBtn');
+            const errorsBox = document.getElementById('errorsBox');
+            const okBox = document.getElementById('okBox');
+            const status = document.getElementById('status');
+            const liveCheck = document.getElementById('liveCheck');
+            const clearBtn = document.getElementById('clearBtn');
+
+            sampleBtn.addEventListener('click', () => {
+                ta.value = [
+                    "She ate an apple^[một loại quả màu đỏ] yesterday.",
+                    "I **look forward to**^[mong đợi] meeting you.",
+                    "It's raining cats and dogs.^[Trời mưa rất to]",
+                    "",
+                    "Sai cách viết (có khoảng trắng): apple ^[lỗi khoảng trắng giữa từ và ^[ ]",
+                    "Sai cú pháp cụm từ: look forward to^[thiếu in đậm] (phải là **look forward to**^[...])",
+                    "Thiếu đóng ngoặc: banana^[một quả không đóng ngoặc",
+                    "Chú thích rỗng: kiwi^[]",
+                    "Chú thích sau dấu hỏi?^[Đây là chú thích cho toàn câu]"
+                ].join("\\n");
+                runCheck();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                ta.value = '';
+                render.textContent = '';
+                errorsBox.style.display = 'none';
+                okBox.style.display = 'none';
+                status.textContent = '';
+            });
+
+            fileInput.addEventListener('change', (ev) => {
+                const f = ev.target.files[0];
+                if (!f) return;
+                const reader = new FileReader();
+                reader.onload = () => { ta.value = reader.result; runCheck(); };
+                reader.readAsText(f, 'utf-8');
+            });
+
+            checkBtn.addEventListener('click', runCheck);
+            ta.addEventListener('input', () => { if (liveCheck.checked) runCheck(); });
+
+            // Utility: escape HTML
+            function esc(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
+            function runCheck() {
+                const text = ta.value.replace(/\r\n/g, '\n');
+                const lines = text.split('\n');
+                const errors = [];
+                const highlights = []; // {line, start, end, type}
+                // Patterns used:
+                // We detect all occurrences of ^[  (literal caret + bracket)
+                // then evaluate what's before it and after it.
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    let idx = 0;
+                    while (true) {
+                        const pos = line.indexOf('^[', idx);
+                        if (pos === -1) break;
+                        // find closing ] for this note (on same line)
+                        const close = line.indexOf(']', pos + 2);
+                        const col = pos; // 0-based column where ^[ starts
+                        if (close === -1) {
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Thiếu dấu đóng \']\' cho chú thích.' });
+                            // mark region from pos to end-of-line
+                            highlights.push({ line: i, start: pos, end: line.length, type: 'bad' });
+                            idx = pos + 2;
+                            continue;
+                        }
+                        const noteContent = line.substring(pos + 2, close);
+                        if (noteContent.length === 0) {
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Chú thích rỗng (^[ ]). Viết nội dung vào giữa [].' });
+                            highlights.push({ line: i, start: pos, end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+                        // ensure note doesn't contain another ^[ (invalid nested)
+                        if (noteContent.includes('^[')) {
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Chú thích chứa một ^[ khác (lồng nhau?) — không hợp lệ.' });
+                            highlights.push({ line: i, start: pos, end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+
+                        // Determine what the annotation refers to by inspecting preceding characters
+                        const charBefore = (pos - 1 >= 0) ? line[pos - 1] : '';
+                        // If charBefore is whitespace -> invalid except maybe sentence case? NO: sentence expects punctuation immediately before ^[
+                        if (/\s/.test(charBefore)) {
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Có khoảng trắng trước ^[ — theo quy tắc không được có khoảng trắng giữa đối tượng và ^[.' });
+                            highlights.push({ line: i, start: pos - 1, end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+                        // Sentence case: punctuation . ! ? immediately before ^[
+                        if (/[.!?]/.test(charBefore)) {
+                            // Accept as sentence annotation
+                            highlights.push({ line: i, start: pos, end: close + 1, type: 'sentence' });
+                            idx = close + 1;
+                            continue;
+                        }
+                        // Phrase case: must be **...** immediately before ^[
+                        // We check whether immediately preceding characters are '**' (end of bold)
+                        // Find if there's an ending '**' that abuts pos-1 and a matching starting '**' earlier on the same line
+                        // Strategy: search backward for '**' pair
+                        let isPhrase = false;
+                        // Check for exactly two '*' immediately before ^[
+                        if (line[pos - 1] === '*' && pos - 2 >= 0 && line[pos - 2] === '*') {
+                            // closing bold found at pos-2..pos-1. Find matching opening **
+                            const endBoldIdx = pos - 2;
+                            const openIdx = line.lastIndexOf('**', endBoldIdx - 1);
+                            if (openIdx !== -1) {
+                                // ensure there's at least one character between opening and closing **
+                                if (endBoldIdx - (openIdx + 2) >= 1) {
+                                    isPhrase = true;
+                                    // mark the phrase — from openIdx to pos (closing **) and note afterwards
+                                    highlights.push({ line: i, start: openIdx, end: close + 1, type: 'phrase' });
+                                    idx = close + 1;
+                                    continue;
+                                }
+                            }
+                            // If we saw '**' but couldn't find matching opening -> error
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Phát hiện ** trước ^[ nhưng không tìm thấy ** mở tương ứng trên cùng dòng.' });
+                            highlights.push({ line: i, start: Math.max(0, pos - 4), end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+
+                        // Word case: character before ^[ is part of a word/punctuation but not punctuation sentence nor **
+                        // Check there's no space (we already did) — accept as word annotation
+                        // But ensure the 'object' is a continuous token: scan backward to first whitespace or punctuation (excluding - and ' maybe allowed)
+                        // Extract token
+                        let tokenStart = pos - 1;
+                        while (tokenStart >= 0 && !/\s/.test(line[tokenStart]) && line[tokenStart] !== '"' && line[tokenStart] !== '\'') {
+                            tokenStart--;
+                        }
+                        tokenStart++;
+                        const token = line.substring(tokenStart, pos);
+                        // If token is empty -> suspicious
+                        if (!token) {
+                            errors.push({ line: i + 1, col: col + 1, msg: 'Không tìm thấy từ/cụm trước ^[ để chú thích (vị trí không hợp lệ).' });
+                            highlights.push({ line: i, start: pos, end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+                        // If token contains spaces (shouldn't) — flag
+                        if (/\s/.test(token)) {
+                            errors.push({ line: i + 1, col: tokenStart + 1, msg: 'Đối tượng có khoảng trắng — nếu là cụm từ phải dùng **...** để bôi đậm trước ^[.' });
+                            highlights.push({ line: i, start: tokenStart, end: close + 1, type: 'bad' });
+                            idx = close + 1;
+                            continue;
+                        }
+                        // Accept as valid word annotation
+                        highlights.push({ line: i, start: tokenStart, end: close + 1, type: 'word' });
+                        idx = close + 1;
+                    } // end while
+                    // Extra check: ensure there is no '**...**' that contains ^[ inside the bold markers incorrectly (we handled closing abutting ^[)
+                    // (More complex checks can be added)
+                } // end for lines
+
+                // Render annotated text with highlights
+                const outLines = lines.map((ln, i) => escapeAndHighlightLine(ln, highlights.filter(h => h.line === i)));
+                render.innerHTML = outLines.join('\n');
+
+                // Show errors list
+                if (errors.length) {
+                    errorsBox.style.display = 'block';
+                    okBox.style.display = 'none';
+                    errorsBox.innerHTML = '<strong>Lỗi tìm thấy:</strong>';
+                    for (const e of errors) {
+                        const el = document.createElement('div');
+                        el.className = 'err-item';
+                        el.innerHTML = '<strong>Dòng ' + e.line + ', cột ' + e.col + ':</strong> ' + esc(e.msg);
+                        errorsBox.appendChild(el);
+                    }
+                    status.textContent = errors.length + ' lỗi cú pháp được phát hiện.';
+                } else {
+                    errorsBox.style.display = 'none';
+                    okBox.style.display = 'block';
+                    status.textContent = 'Không tìm thấy lỗi cú pháp chính (kiểm tra cơ bản).';
+                }
+            } // runCheck
+
+            // Helper: escape & insert spans for highlights. highlights sorted by start.
+            function escapeAndHighlightLine(line, hls) {
+                if (!hls || hls.length === 0) return esc(line);
+                // sort by start
+                hls = hls.slice().sort((a, b) => a.start - b.start);
+                let out = '', idx = 0;
+                for (const h of hls) {
+                    const s = Math.max(0, Math.min(line.length, h.start));
+                    const e = Math.max(0, Math.min(line.length, h.end));
+                    if (s > idx) {
+                        out += esc(line.slice(idx, s));
+                    }
+                    const spanClass = h.type === 'phrase' ? 'highlight-phrase' : (h.type === 'sentence' ? 'highlight-sentence' : (h.type === 'word' ? 'highlight-word' : ''));
+                    out += '<span class="' + spanClass + '">' + esc(line.slice(s, e)) + '</span>';
+                    idx = e;
+                }
+                if (idx < line.length) out += esc(line.slice(idx));
+                return out;
+            }
+
+            function esc(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
+            // run initial (empty)
+            runCheck();
+
+        })();
+    </script>
+</body>
+
+</html>
