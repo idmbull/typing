@@ -9,6 +9,7 @@ function cleanText(text) {
         .replace(/[‘’]/g, "'")
         .replace(/[“”]/g, "\"")
         .replace(/[—–]/g, "-")
+        .replace(/…/g, "...")
         .replace(/\u200B/g, "");
 }
 
