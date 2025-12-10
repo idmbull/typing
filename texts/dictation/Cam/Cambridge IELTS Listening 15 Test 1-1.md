@@ -1,6 +1,6 @@
 45.960000	47.130000	AMBER	Hello William.^[Chào William.]
 47.410000	48.680000		This is Amber
-49.030000	55.500000		– you **said to phone**^[bảo gọi điện] if I **wanted to get**^[muốn có/biết] **more information**^[thêm thông tin] about the **job agency**^[cơ quan giới thiệu việc làm] you mentioned.^[Đây là Amber đây – bạn đã bảo hãy gọi nếu tôi muốn biết thêm thông tin về công ty môi giới việc làm mà bạn đã nhắc đến.]
+49.030000	55.500000		– you **said to phone**^[bảo gọi điện] if I **wanted to get**^[muốn có/biết] **more information**^[thêm thông tin] about the **job agency**^[employment agency] you **mentioned**^[nhắc đến (một cách thoáng qua)].^[Đây là Amber đây – bạn đã bảo hãy gọi nếu tôi muốn biết thêm thông tin về công ty môi giới việc làm mà bạn đã nhắc đến.]
 55.830000	57.560000		Is now a **good time**^[lúc thích hợp]?^[Bây giờ có tiện không?]
 
 57.740000	60.310000	WILLIAM	Oh, hi Amber.^[Ồ, chào Amber.] Yes.^[Có.] Fine.^[Được chứ.]
@@ -11,7 +11,7 @@
 69.810000	71.180000	AMBER	OK, thanks.^[Được, cảm ơn.]
 71.510000	75.510000		So **is there anyone in particular**^[có ai cụ thể nào] I **should speak to**^[nên nói chuyện với] there?^[Vậy có ai cụ thể mà tôi nên gặp ở đó không?]
 
-75.560000	79.230000	WILLIAM	The agent I **always deal with**^[luôn làm việc cùng] is called Becky Jamieson.^[Người đại diện mà tôi luôn làm việc cùng tên là Becky Jamieson.]
+75.560000	79.230000	WILLIAM	The **agent**^[Người đại diện / người thay mặt] I always **deal with**^[llàm việc cùng] is called Becky Jamieson.^[Người đại diện mà tôi luôn làm việc cùng tên là Becky Jamieson.]
 
 79.640000	81.320000	AMBER	**Let me**^[để tôi] write that down
 81.680000	82.520000		– Becky ...^[Để tôi ghi lại đã – Becky …]
@@ -26,13 +26,13 @@
 98.310000	100.850000		078 double 6,
 101.080000	103.520000		510 triple 3.^[Có, nó nằm đâu đó trong danh bạ của tôi – à, đây rồi: 078 66, 510 333.]
 103.970000	106.816133		I **wouldn’t call her**^[sẽ không gọi cho cô ấy] until the afternoon **if I were you**^[nếu tôi là bạn]
-106.816133	110.930000		– she’s **always really busy**^[luôn rất bận rộn] in the morning **trying to fill**^[cố gắng lấp đầy/tìm người cho] **last-minute vacancies**^[các vị trí trống gấp/phút chót].^[Nếu tôi là bạn, tôi sẽ không gọi cho cô ấy cho đến buổi chiều – cô ấy luôn rất bận vào buổi sáng để cố gắng tìm người cho các vị trí trống gấp.]
-111.400000	116.690000		She’s **really helpful**^[thực sự nhiệt tình] and friendly so **I’m sure**^[tôi chắc chắn] **it would be worth**^[sẽ rất đáng] **getting in touch with her**^[liên lạc với cô ấy] for an **informal chat**^[cuộc trò chuyện thân mật/xã giao].^[Cô ấy thực sự nhiệt tình và thân thiện nên tôi chắc chắn rằng sẽ rất đáng để liên lạc với cô ấy cho một cuộc trò chuyện thân mật.]
+106.816133	110.930000		– she’s **always really busy**^[luôn rất bận rộn] in the morning **trying to fill**^[cố gắng lấp đầy/tìm người cho] **last-minute vacancies**^[những vị trí trống phát sinh vào phút cuối (thường do ai đó nghỉ đột xuất)].^[Nếu tôi là bạn, tôi sẽ không gọi cho cô ấy cho đến buổi chiều – cô ấy luôn rất bận vào buổi sáng để cố gắng tìm người cho các vị trí trống gấp.]
+111.400000	116.690000		She’s **really helpful**^[thực sự nhiệt tình] and friendly so **I’m sure**^[tôi chắc chắn] it would be **worth**^[worth + V-ing: dùng để đề xuất, khuyên vì nghĩ hành động đó có ích] **getting in touch with**^[liên lạc với ai đó] her for an **informal chat**^[cuộc trò chuyện thân mật/xã giao].^[Cô ấy thực sự nhiệt tình và thân thiện nên tôi chắc chắn rằng sẽ rất đáng để liên lạc với cô ấy cho một cuộc trò chuyện thân mật.]
 
-117.360000	121.740000	AMBER	It’s **mainly clerical**^[chủ yếu là văn thư] and **admin jobs**^[công việc hành chính] they **deal with**^[giải quyết/cung cấp], isn’t it?^[Họ chủ yếu giải quyết các công việc văn thư và hành chính, phải không?]
+117.360000	121.740000	AMBER	It’s mainly **clerical**^[Clerical jobs: làm văn thư, xử lý giấy tờ hàng ngày.] and **admin jobs**^[công việc hành chính] they **deal with**^[giải quyết/cung cấp], isn’t it?^[Họ chủ yếu giải quyết các công việc văn thư và hành chính, phải không?]
 
 121.900000	122.830000	WILLIAM	**That’s right**^[đúng vậy].^[Đúng vậy.]
-123.190000	126.690000		I know you’re **hoping to find**^[đang hy vọng tìm được] a **full-time job**^[công việc toàn thời gian] in the media **eventually**^[sau cùng/rốt cuộc]
+123.190000	126.690000		I know you’re **hoping to find**^[đang hy vọng tìm được] a **full-time job**^[công việc toàn thời gian] in the media **eventually**^[trạng từ chỉ thời gian tương lai không xác định nhấn mạnh kết quả sau cùng.]
 126.720000	130.560000		– but Becky **mostly recruits**^[chủ yếu tuyển dụng] **temporary staff**^[nhân viên tạm thời] for the **finance sector**^[lĩnh vực tài chính]
 130.730000	132.510000		– which will **look good**^[trông đẹp/ấn tượng] on your CV
 132.550000	134.570000		– and generally **pays better**^[trả lương cao hơn] too.^[Tôi biết rốt cuộc bạn đang hy vọng tìm được một công việc toàn thời gian trong ngành truyền thông – nhưng Becky chủ yếu tuyển nhân viên tạm thời cho lĩnh vực tài chính – điều này sẽ làm đẹp hồ sơ của bạn – và thường thì lương cũng cao hơn nữa.]
@@ -40,7 +40,7 @@
 134.800000	140.290000	AMBER	Yeah – I’m **just a bit worried**^[chỉ hơi lo lắng một chút] because I **don’t have much**^[không có nhiều] **office experience**^[kinh nghiệm văn phòng].^[Vâng – tôi chỉ hơi lo một chút vì tôi không có nhiều kinh nghiệm làm văn phòng.]
 
 140.380000	141.350000	WILLIAM	I **wouldn’t worry**^[sẽ không lo lắng đâu].^[Tôi sẽ không lo lắng đâu. (“If I were you, I wouldn’t worry.” ngụ ý)]
-141.430000	144.860000		They’ll **probably start you**^[có lẽ sẽ bắt đầu cho bạn làm] as a receptionist, or **something like that**^[thứ gì đó tương tự].^[Họ có lẽ sẽ để bạn bắt đầu làm lễ tân, hoặc công việc gì đó tương tự.]
+141.430000	144.860000		They’ll **probably**^[mức độ dự đoán, khả năng xảy ra cao nhưng không chắc 100%.] **start you as**^[start (someone) as (a job) = cho ai đó bắt đầu với vai trò / vị trí nào đó] a **receptionist**^[reception: sự đón tiếp], or **something like that**^[thứ gì đó tương tự].^[Họ có lẽ sẽ để bạn bắt đầu làm lễ tân, hoặc công việc gì đó tương tự.]
 145.279057	149.879057		So **what’s important**^[điều quan trọng] for **that kind of job**^[loại công việc đó] isn’t **so much**^[không hẳn là] **having business skills**^[có kỹ năng kinh doanh] or
 149.942292	152.571936		**knowing lots of**^[biết nhiều] different **computer systems**^[hệ thống máy tính]
 152.571936	156.112292		– it’s communication that **really matters**^[thực sự quan trọng] – so **you’d be fine**^[bạn sẽ ổn] there.^[Vì vậy, điều quan trọng đối với loại công việc đó không hẳn là có kỹ năng kinh doanh hay biết nhiều hệ thống máy tính khác nhau – giao tiếp mới là thứ thực sự quan trọng – nên bạn sẽ làm tốt thôi.]
