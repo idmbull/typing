@@ -13,6 +13,20 @@ import { displayText } from "./renderer.js";
 const superPlayer = new SuperAudioPlayer();
 let controller;
 let maxReachedSegment = 0;
+let isAudioLoading = false;
+
+// Hàm cập nhật UI nút start
+function updateStartButtonState() {
+    if (isAudioLoading) {
+        DOM.actionLabel.textContent = "Loading Audio...";
+        DOM.actionLabel.style.opacity = "0.5";
+        DOM.actionToggle.disabled = true;
+    } else {
+        DOM.actionLabel.textContent = "Start";
+        DOM.actionLabel.style.opacity = "1";
+        DOM.actionToggle.disabled = false;
+    }
+}
 
 function resetDictState() {
     Store.setCurrentSegment(0);
@@ -111,13 +125,43 @@ export async function initDictationMode() {
         onReset: resetDictState,
 
         onLoadContent: async (filename) => {
+            // 1. Tải Text và hiển thị NGAY LẬP TỨC
+            // Việc này rất nhẹ, người dùng sẽ thấy nội dung bài học ngay
             await loadContent(filename, "dictation");
+
+            // Reset trạng thái Audio Player
+            superPlayer.stop();
+
+            // 2. Kiểm tra xem bài này có Audio URL không (đã set trong Store ở bước loadContent)
             const audioUrl = Store.getSource().audioUrl;
+
             if (audioUrl) {
-                try {
-                    const buf = await (await fetch(audioUrl)).arrayBuffer();
-                    await superPlayer.load(buf);
-                } catch (e) { console.warn(e); }
+                // Đánh dấu đang tải
+                isAudioLoading = true;
+                updateStartButtonState(); // Khóa nút Start, hiện chữ Loading
+
+                // 3. Tải Audio chạy ngầm (Không dùng await để chặn UI thread)
+                fetch(audioUrl)
+                    .then(resp => resp.arrayBuffer())
+                    .then(buf => {
+                        return superPlayer.load(buf);
+                    })
+                    .then(() => {
+                        console.log("Audio loaded successfully!");
+                    })
+                    .catch(err => {
+                        console.warn("Audio load failed:", err);
+                        alert("Không tải được file Audio!");
+                    })
+                    .finally(() => {
+                        // Tải xong (dù thành công hay thất bại)
+                        isAudioLoading = false;
+                        updateStartButtonState(); // Mở khóa nút Start
+                    });
+            } else {
+                // Không có audio thì thôi
+                isAudioLoading = false;
+                updateStartButtonState();
             }
         },
 
