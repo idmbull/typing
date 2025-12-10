@@ -17,7 +17,7 @@ export const DOM = {
     get actionToggle() { return $('#actionToggle'); },
     get actionLabel() { return $('#actionLabel'); },
     get settingsGroup() { return $('.settings-group'); },
-    
+
     // Toggles
     get soundToggle() { return $('#soundToggle'); },
     get autoPronounceToggle() { return $('#autoPronounceToggle'); },
@@ -33,6 +33,7 @@ export const DOM = {
     get fileLoader() { return $('#fileLoader'); },
     get fileLoaderBtn() { return $('#fileLoaderBtn'); },
     get playlistSelect() { return $('#playlist'); },
+    get playlistTrigger() { return $('#playlistTrigger'); },
     get difficultySelect() { return $('#difficulty'); },
     get modeSwitchBtn() { return $('#modeSwitchBtn'); },
 

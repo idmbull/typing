@@ -114,12 +114,23 @@
         </div>
 
         <footer>
-            <!-- Input file ẩn -->
+            <!-- Input file ẩn (giữ nguyên) -->
             <input type="file" id="fileLoader" accept=".txt,.md,.json,.tsv,.mp3" hidden multiple>
-            <!-- Nút Load -->
             <button id="fileLoaderBtn" class="btn-icon">📂 Load</button>
 
-            <select id="playlist"></select>
+            <!-- THAY THẾ SELECT CŨ BẰNG ĐOẠN NÀY -->
+            <div class="custom-dropdown" id="playlistDropdown">
+                <div class="dropdown-trigger" id="playlistTrigger">
+                    <span>Chọn bài tập...</span>
+                    <span class="arrow">▼</span>
+                </div>
+                <!-- Menu cây thư mục sẽ được render vào đây -->
+                <div class="dropdown-content hidden" id="playlistContent"></div>
+            </div>
+            <!-- Input ẩn để code JS cũ vẫn đọc được giá trị nếu cần -->
+            <input type="hidden" id="playlist" value="">
+            <!-- KẾT THÚC PHẦN THAY THẾ -->
+
             <span style="opacity: 0.5">/</span>
 
             <!-- Difficulty Select (Reading) -->

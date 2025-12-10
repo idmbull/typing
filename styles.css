@@ -816,6 +816,160 @@ select:focus {
 }
 
 /* ==========================================================================
+   CUSTOM DROPDOWN (TREE VIEW)
+   ========================================================================== */
+.custom-dropdown {
+    position: relative;
+    min-width: 250px;
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+.dropdown-trigger {
+    background: var(--section-bg);
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-primary);
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-trigger:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-trigger .arrow {
+    font-size: 0.7em;
+    margin-left: 10px;
+    color: var(--text-muted);
+}
+
+/* Dropdown Content Box */
+.dropdown-content {
+    position: absolute;
+    bottom: 110%;
+    /* Hiển thị phía trên nút bấm */
+    left: 0;
+    width: 300px;
+    /* Rộng hơn nút bấm để hiển thị tên dài */
+    max-height: 400px;
+    overflow-y: auto;
+    background: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    z-index: 5000;
+    backdrop-filter: blur(10px);
+
+    /* Animation */
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.dropdown-content.hidden {
+    display: none;
+    /* Dùng display none để tránh click nhầm */
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* Tree Items */
+.tree-ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+/* Nested lists indent */
+.tree-ul .tree-ul {
+    padding-left: 18px;
+    border-left: 1px solid var(--border-color);
+    margin-left: 7px;
+    display: none;
+    /* Mặc định ẩn thư mục con */
+}
+
+.tree-ul .tree-ul.expanded {
+    display: block;
+}
+
+.tree-item {
+    margin: 2px 0;
+}
+
+.tree-label {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.1s;
+}
+
+.tree-label:hover {
+    background: var(--section-bg);
+    color: var(--accent-color);
+}
+
+.tree-label.is-folder {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.tree-label.is-file {
+    font-family: var(--font-ui);
+}
+
+.tree-label.active {
+    background: var(--accent-gradient);
+    color: white !important;
+}
+
+/* Icons */
+.tree-icon {
+    margin-right: 8px;
+    font-size: 1rem;
+    display: inline-block;
+    width: 16px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+/* Xoay mũi tên khi mở folder */
+.expanded>.tree-label .tree-arrow {
+    transform: rotate(90deg);
+}
+
+.tree-arrow {
+    display: inline-block;
+    font-size: 0.7rem;
+    margin-right: 5px;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+/* Scrollbar đẹp cho dropdown */
+.dropdown-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+/* ==========================================================================
    11. RESPONSIVE DESIGN
    ========================================================================== */
 @media (max-width: 768px) {

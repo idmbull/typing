@@ -6,9 +6,9 @@ import { loadPlaylist, loadContent, loadSection, loadUserContent } from "./loade
 import { initController } from "./input-controller.js";
 import { ExerciseController } from "./core/exercise-controller.js";
 import { setupDragDrop } from "./utils/drag-drop.js";
-import { replayLastWord } from "./audio.js"; 
+import { replayLastWord } from "./audio.js";
 import { EventBus, EVENTS } from "./core/events.js";
-import { displayText } from "./renderer.js"; 
+import { displayText } from "./renderer.js";
 
 const superPlayer = new SuperAudioPlayer();
 let controller;
@@ -34,7 +34,7 @@ function playCurrentSegment() {
 // [MỚI] Hàm tìm Segment dựa trên vị trí ký tự click
 function findSegmentIndexByCharIndex(charIndex, charStarts) {
     if (!charStarts || charStarts.length === 0) return 0;
-    
+
     // Tìm start index lớn nhất mà vẫn nhỏ hơn hoặc bằng charIndex
     let found = 0;
     for (let i = 0; i < charStarts.length; i++) {
@@ -42,7 +42,7 @@ function findSegmentIndexByCharIndex(charIndex, charStarts) {
             found = i;
         } else {
             // Vì mảng đã sắp xếp, gặp số lớn hơn là dừng ngay
-            break; 
+            break;
         }
     }
     return found;
@@ -56,7 +56,7 @@ export async function initDictationMode() {
         superPlayer.setVolume(parseFloat(DOM.volumeInput.value));
         DOM.volumeInput.oninput = (e) => superPlayer.setVolume(parseFloat(e.target.value));
     }
-    
+
     // --- [MỚI] SỰ KIỆN DOUBLE CLICK VÀO TỪ ---
     if (DOM.textDisplay) {
         DOM.textDisplay.addEventListener("dblclick", (e) => {
@@ -66,7 +66,7 @@ export async function initDictationMode() {
             // 2. Tìm index của span đó trong mảng textSpans của Store
             const spans = Store.getState().textSpans;
             const charIndex = spans.indexOf(e.target);
-            
+
             if (charIndex === -1) return;
 
             // 3. Tìm Segment chứa ký tự này
@@ -94,14 +94,14 @@ export async function initDictationMode() {
 
     // Load initial data
     await loadPlaylist("dictation");
-    if(DOM.playlistSelect.value) {
+    if (DOM.playlistSelect.value) {
         await loadContent(DOM.playlistSelect.value, "dictation");
         const audioUrl = Store.getSource().audioUrl;
-        if(audioUrl) {
+        if (audioUrl) {
             try {
                 const buf = await (await fetch(audioUrl)).arrayBuffer();
                 await superPlayer.load(buf);
-            } catch(e) { console.warn("Init audio failed", e); }
+            } catch (e) { console.warn("Init audio failed", e); }
         }
     }
 
@@ -109,7 +109,7 @@ export async function initDictationMode() {
 
     controller = new ExerciseController("dictation", {
         onReset: resetDictState,
-        
+
         onLoadContent: async (filename) => {
             await loadContent(filename, "dictation");
             const audioUrl = Store.getSource().audioUrl;
@@ -117,10 +117,10 @@ export async function initDictationMode() {
                 try {
                     const buf = await (await fetch(audioUrl)).arrayBuffer();
                     await superPlayer.load(buf);
-                } catch(e) { console.warn(e); }
+                } catch (e) { console.warn(e); }
             }
         },
-        
+
         onSectionChange: (val) => {
             loadSection(val);
             Store.setCurrentSegment(0);
@@ -137,7 +137,7 @@ export async function initDictationMode() {
         onCtrlSpaceSingle: () => playCurrentSegment(),
         onCtrlSpaceDouble: () => replayLastWord()
     });
-    
+    window.currentController = controller;
     controller.reset();
 
     if (DOM.dictationReplayBtn) {
@@ -190,16 +190,16 @@ function setupLocalFileUpload() {
 
         const isBlind = dictationBlindMode.checked;
         Store.setBlindMode(isBlind);
-        if(blindModeToggle) blindModeToggle.checked = isBlind;
+        if (blindModeToggle) blindModeToggle.checked = isBlind;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             await loadUserContent(e.target.result, subFile.name, "dictation");
             const audioBuf = await audioFile.arrayBuffer();
             await superPlayer.load(audioBuf);
-            
+
             Store.setSource({ ...Store.getSource(), hasAudio: true, audioUrl: null });
-            
+
             dictationBtn.textContent = subFile.name;
             dictationModal.classList.add("hidden");
             controller.reset();

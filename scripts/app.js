@@ -32,18 +32,18 @@ export async function initReadingMode() {
         },
         onSectionChange: (val) => loadSection(val),
         onActionStart: () => { },
-        
+
         // Reading Mode: Ctrl+Space (Double/Single) đều đọc từ vựng
         onCtrlSpaceSingle: () => replayLastWord(),
         onCtrlSpaceDouble: () => replayLastWord()
     });
-
+    window.currentController = controller;
     controller.reset();
 }
 
 function setupFileLoader() {
     if (!DOM.fileLoaderBtn) return;
-    
+
     DOM.fileLoaderBtn.onclick = () => DOM.fileLoader.click();
 
     DOM.fileLoader.onchange = (e) => {
