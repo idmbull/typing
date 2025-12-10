@@ -43,13 +43,4 @@ function setupUIForMode(mode) {
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
     setupUIForMode(currentMode);
-    // Ẩn Loader sau khi mọi thứ đã sẵn sàng
-    // (Cho setTimeout nhỏ để đảm bảo render xong DOM)
-    setTimeout(() => {
-        const loader = document.getElementById('initial-loader');
-        if(loader) {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 500);
-        }
-    }, 300);
 });
