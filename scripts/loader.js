@@ -133,11 +133,16 @@ function initCustomDropdown(data, mode) {
     // --- Callback xử lý khi chọn file ---
     const handleFileSelect = async (fullPath) => {
         try {
-            await loadContent(fullPath, mode);
+            // [SỬA ĐỔI QUAN TRỌNG] 
+            // Kiểm tra xem Controller hiện tại có logic tải nội dung riêng không (Dictation cần load Audio)
+            // Nếu có thì gọi qua Controller, nếu không thì dùng hàm loadContent mặc định (chỉ Text)
+            if (window.currentController && typeof window.currentController.callbacks?.onLoadContent === 'function') {
+                await window.currentController.callbacks.onLoadContent(fullPath);
+            } else {
+                await loadContent(fullPath, mode);
+            }
 
-            // [QUAN TRỌNG] Reset bài tập sau khi load nội dung mới
-            // Ta truy cập controller thông qua biến global window.currentController
-            // (Được gán trong app.js / dictation-app.js)
+            // Reset bài tập sau khi load nội dung mới
             if (window.currentController) {
                 window.currentController.reset();
             }
@@ -147,20 +152,19 @@ function initCustomDropdown(data, mode) {
         }
     };
 
+    // ... (Phần code phía dưới giữ nguyên) ...
     // Build cây thư mục từ dữ liệu JSON
     data.forEach(item => {
-        // Root items không có prefix
         rootUl.appendChild(createTreeItem(item, "", handleFileSelect));
     });
     container.appendChild(rootUl);
 
-    // --- Sự kiện đóng mở Dropdown ---
+    // ... (Phần sự kiện click giữ nguyên) ...
     trigger.onclick = (e) => {
         e.stopPropagation();
         container.classList.toggle('hidden');
     };
 
-    // Click ra ngoài thì đóng dropdown
     document.addEventListener('click', (e) => {
         if (dropdown && !dropdown.contains(e.target)) {
             container.classList.add('hidden');
