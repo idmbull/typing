@@ -9,7 +9,7 @@ function cleanText(text) {
         .replace(/[‘’]/g, "'")
         .replace(/[“”]/g, "\"")
         .replace(/[—–]/g, "-")
-        .replace(/…/g, "...")
+        .replace(/ …/g, "...")
         .replace(/\u200B/g, "");
 }
 
@@ -181,4 +181,5 @@ export function processSectionText(rawSection) {
     const html = convertInlineFootnotes(rawSection);
     const clean = convertMarkdownToPlain(stripMarkup(rawSection));
     return { html, clean };
+
 }
