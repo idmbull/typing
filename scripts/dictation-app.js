@@ -111,13 +111,37 @@ export async function initDictationMode() {
         onReset: resetDictState,
 
         onLoadContent: async (filename) => {
+            // 1. Tải Text trước (nhanh) -> Để loader.js kịp gọi reset() hiển thị Text
             await loadContent(filename, "dictation");
+
+            // 2. Xử lý Audio (Bất đồng bộ - Không dùng await để chặn UI)
             const audioUrl = Store.getSource().audioUrl;
             if (audioUrl) {
-                try {
-                    const buf = await (await fetch(audioUrl)).arrayBuffer();
-                    await superPlayer.load(buf);
-                } catch (e) { console.warn(e); }
+                // Thông báo nhẹ là đang tải Audio (tùy chọn UI)
+                const actionLabel = document.getElementById('actionLabel');
+                const originalLabel = actionLabel ? actionLabel.textContent : "Start";
+                if (actionLabel) actionLabel.textContent = "⏳ Audio...";
+
+                fetch(audioUrl)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Audio fetch failed");
+                        return res.arrayBuffer();
+                    })
+                    .then(buf => {
+                        // Tải xong thì nạp vào Player
+                        return superPlayer.load(buf);
+                    })
+                    .then(() => {
+                        console.log("Audio loaded ready");
+                        if (actionLabel) actionLabel.textContent = "Start";
+                    })
+                    .catch(e => {
+                        console.warn("Audio load error:", e);
+                        if (actionLabel) actionLabel.textContent = "No Audio";
+                    });
+            } else {
+                // Nếu không có audio
+                superPlayer.stop();
             }
         },
 
