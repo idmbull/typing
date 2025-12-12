@@ -14,14 +14,10 @@ const superPlayer = new SuperAudioPlayer();
 let controller;
 let maxReachedSegment = 0;
 
-// [QUAN TRỌNG] Các biến quản lý phiên tải
-let currentAbortController = null; // Để hủy fetch mạng
-let currentLoadId = 0;             // Để hủy logic decode
-
 function resetDictState() {
     Store.setCurrentSegment(0);
     displayText(Store.getSource().html);
-    // Không gọi superPlayer.stop() ở đây nữa vì logic load sẽ tự xử lý
+    superPlayer.stop();
     maxReachedSegment = 0;
 }
 
@@ -30,20 +26,22 @@ function playCurrentSegment() {
     const idx = source.currentSegment;
     const seg = source.segments[idx];
     if (seg) {
-        // Chỉ stop nếu đang phát, load logic tự clear buffer rồi
         superPlayer.stop();
         superPlayer.playSegment(seg.audioStart, seg.audioEnd);
     }
 }
 
-// Hàm tìm Segment giữ nguyên
+// [MỚI] Hàm tìm Segment dựa trên vị trí ký tự click
 function findSegmentIndexByCharIndex(charIndex, charStarts) {
     if (!charStarts || charStarts.length === 0) return 0;
+
+    // Tìm start index lớn nhất mà vẫn nhỏ hơn hoặc bằng charIndex
     let found = 0;
     for (let i = 0; i < charStarts.length; i++) {
         if (charIndex >= charStarts[i]) {
             found = i;
         } else {
+            // Vì mảng đã sắp xếp, gặp số lớn hơn là dừng ngay
             break;
         }
     }
@@ -53,30 +51,40 @@ function findSegmentIndexByCharIndex(charIndex, charStarts) {
 export async function initDictationMode() {
     initController();
 
-    // Setup Volume... (Giữ nguyên)
+    // Setup Volume
     if (DOM.volumeInput) {
         superPlayer.setVolume(parseFloat(DOM.volumeInput.value));
         DOM.volumeInput.oninput = (e) => superPlayer.setVolume(parseFloat(e.target.value));
     }
 
-    // Sự kiện Double Click... (Giữ nguyên)
+    // --- [MỚI] SỰ KIỆN DOUBLE CLICK VÀO TỪ ---
     if (DOM.textDisplay) {
         DOM.textDisplay.addEventListener("dblclick", (e) => {
+            // 1. Kiểm tra xem có click vào ký tự không
             if (e.target.tagName !== "SPAN" || e.target.classList.contains("newline-char")) return;
+
+            // 2. Tìm index của span đó trong mảng textSpans của Store
             const spans = Store.getState().textSpans;
             const charIndex = spans.indexOf(e.target);
+
             if (charIndex === -1) return;
+
+            // 3. Tìm Segment chứa ký tự này
             const source = Store.getSource();
             const segIdx = findSegmentIndexByCharIndex(charIndex, source.charStarts);
             const seg = source.segments[segIdx];
+
+            // 4. Phát audio đoạn đó (nếu có)
             if (seg) {
+                console.log(`Replaying segment ${segIdx}: "${seg.text}"`);
                 superPlayer.stop();
                 superPlayer.playSegment(seg.audioStart, seg.audioEnd);
             }
         });
     }
+    // ------------------------------------------
 
-    // Sự kiện Segment Change... (Giữ nguyên)
+    // Logic: Chỉ phát khi tiến tới câu mới
     EventBus.on(EVENTS.DICTATION_SEGMENT_CHANGE, (newIndex) => {
         if (newIndex > maxReachedSegment) {
             maxReachedSegment = newIndex;
@@ -84,93 +92,34 @@ export async function initDictationMode() {
         }
     });
 
-    // Load Playlist... (Giữ nguyên)
+    // Load initial data
     await loadPlaylist("dictation");
+    if (DOM.playlistSelect.value) {
+        await loadContent(DOM.playlistSelect.value, "dictation");
+        const audioUrl = Store.getSource().audioUrl;
+        if (audioUrl) {
+            try {
+                const buf = await (await fetch(audioUrl)).arrayBuffer();
+                await superPlayer.load(buf);
+            } catch (e) { console.warn("Init audio failed", e); }
+        }
+    }
 
-    // Setup Local File Upload... (Giữ nguyên)
     setupLocalFileUpload();
 
     controller = new ExerciseController("dictation", {
         onReset: resetDictState,
 
-        // --- [SỬA LẠI HOÀN TOÀN LOGIC TẢI BÀI] ---
         onLoadContent: async (filename) => {
-            // 1. Hủy request cũ nếu đang chạy
-            if (currentAbortController) {
-                currentAbortController.abort();
-            }
-            // Tạo controller mới cho request này
-            currentAbortController = new AbortController();
-            const signal = currentAbortController.signal; // Signal để truyền vào fetch
-
-            // 2. Tăng ID phiên làm việc
-            // Mọi logic chạy sau await phải kiểm tra ID này
-            const myLoadId = ++currentLoadId;
-
-            // 3. Xóa Audio cũ ngay lập tức (tránh tiếng ma)
-            superPlayer.stop();
-
-            // Cập nhật UI
-            const actionLabel = document.getElementById('actionLabel');
-            if (actionLabel) actionLabel.textContent = "⏳ Text...";
-
-            try {
-                // 4. Tải Text (Nhanh)
-                await loadContent(filename, "dictation");
-
-                // [CHECKPOINT 1] Nếu ID đã đổi (người dùng bấm bài khác trong lúc tải text), dừng ngay
-                if (myLoadId !== currentLoadId) return;
-
-                const audioUrl = Store.getSource().audioUrl;
-
-                if (audioUrl) {
-                    if (actionLabel) actionLabel.textContent = "⏳ Audio...";
-
-                    // 5. Tải Audio với Signal (Nếu abort, fetch sẽ throw AbortError)
-                    const res = await fetch(audioUrl, { signal });
-                    if (!res.ok) throw new Error("Fetch failed");
-
-                    const buf = await res.arrayBuffer();
-
-                    // [CHECKPOINT 2] Nếu ID đã đổi trong lúc tải Audio, dừng ngay
-                    // (Lúc này currentLoadId có thể đã tăng lên n+1)
-                    if (myLoadId !== currentLoadId) return;
-
-                    // 6. Decode và nạp vào Player
+            await loadContent(filename, "dictation");
+            const audioUrl = Store.getSource().audioUrl;
+            if (audioUrl) {
+                try {
+                    const buf = await (await fetch(audioUrl)).arrayBuffer();
                     await superPlayer.load(buf);
-
-                    // [CHECKPOINT 3] Kiểm tra lần cuối sau khi decode
-                    if (myLoadId !== currentLoadId) {
-                        // Nếu lỡ decode xong mà bài đã đổi, xóa buffer vừa nạp
-                        superPlayer.stop(); // Trong superAudioPlayer đã sửa hàm load để xóa buffer
-                        return;
-                    }
-
-                    console.log("Audio ready:", filename);
-                    if (actionLabel) actionLabel.textContent = "Start";
-                } else {
-                    console.log("No audio for this file");
-                    if (actionLabel) actionLabel.textContent = "No Audio";
-                }
-
-            } catch (err) {
-                // Nếu lỗi là do mình chủ động abort thì bỏ qua (không log lỗi đỏ lòm)
-                if (err.name === 'AbortError') {
-                    console.log("Load aborted for:", filename);
-                } else {
-                    console.error("Load failed:", err);
-                    if (myLoadId === currentLoadId && actionLabel) {
-                        actionLabel.textContent = "Error";
-                    }
-                }
-            } finally {
-                // Dọn dẹp nếu đây là request cuối cùng
-                if (myLoadId === currentLoadId) {
-                    currentAbortController = null;
-                }
+                } catch (e) { console.warn(e); }
             }
         },
-        // ------------------------------------------
 
         onSectionChange: (val) => {
             loadSection(val);
@@ -184,27 +133,19 @@ export async function initDictationMode() {
             playCurrentSegment();
         },
 
+        // --- Shortcuts ---
         onCtrlSpaceSingle: () => playCurrentSegment(),
         onCtrlSpaceDouble: () => replayLastWord()
     });
-
     window.currentController = controller;
-
-    // Kích hoạt bài đầu tiên nếu có trong playlist (sử dụng logic mới)
-    if (DOM.playlistSelect.value) {
-        controller.callbacks.onLoadContent(DOM.playlistSelect.value);
-    }
     controller.reset();
 
-    // Replay Button
     if (DOM.dictationReplayBtn) {
         DOM.dictationReplayBtn.onclick = () => playCurrentSegment();
     }
 }
 
-// ... (hàm setupLocalFileUpload giữ nguyên)
 function setupLocalFileUpload() {
-    // ... Copy lại nội dung cũ của hàm này ...
     const {
         dictationBtn, dictationModal, dictationStartBtn, dictationCancelBtn,
         dictationSubInput, dictationAudioInput, dictationBlindMode, blindModeToggle
@@ -247,10 +188,6 @@ function setupLocalFileUpload() {
         const audioFile = dictationAudioInput.files[0];
         if (!subFile || !audioFile) return;
 
-        // Tăng ID để hủy các tiến trình load từ server nếu có
-        currentLoadId++;
-        if (currentAbortController) currentAbortController.abort();
-
         const isBlind = dictationBlindMode.checked;
         Store.setBlindMode(isBlind);
         if (blindModeToggle) blindModeToggle.checked = isBlind;
@@ -259,9 +196,6 @@ function setupLocalFileUpload() {
         reader.onload = async (e) => {
             await loadUserContent(e.target.result, subFile.name, "dictation");
             const audioBuf = await audioFile.arrayBuffer();
-
-            // Dọn dẹp player và load cái mới
-            superPlayer.stop(); // Trong code mới hàm này sẽ clear buffer
             await superPlayer.load(audioBuf);
 
             Store.setSource({ ...Store.getSource(), hasAudio: true, audioUrl: null });
