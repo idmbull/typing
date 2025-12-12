@@ -5,6 +5,7 @@ import { parseReadingContent, parseDictationContent, processSectionText } from "
 
 let CACHE_SECTIONS = {};
 let CACHE_ORDER = [];
+const CDN_BASE = "https://cdn.jsdelivr.net/gh/idmbull/typing@main/";
 
 /* ==========================================================================
    TREE VIEW GENERATOR (CUSTOM DROPDOWN)
@@ -228,9 +229,9 @@ export async function loadPlaylist(mode) {
 export async function loadContent(filename, mode) {
     if (!filename) return;
 
-    const path = mode === "dictation" ? "texts/dictation/" : "texts/typing/";
+    const relativePath = mode === "dictation" ? "texts/dictation/" : "texts/typing/";
     // Ghép path với filename (filename đã chứa subfolder nếu có, do logic createTreeItem tạo ra)
-    const url = `${path}${filename}`;
+    const url = `${CDN_BASE}${relativePath}${filename}`;
 
     const resp = await fetch(url);
     if (!resp.ok) throw new Error("File not found");
@@ -312,7 +313,7 @@ async function findAudio(filename) {
 
     // filename ví dụ: "Oxford/Level1/Lesson1.txt"
     const base = filename.replace(/\.[^.]+$/, ""); // -> "Oxford/Level1/Lesson1"
-    const url = `texts/dictation/${base}.mp3`;
+    const url = `${CDN_BASE}/texts/dictation/${base}.mp3`;
 
     try {
         const res = await fetch(url, { method: "HEAD" });
