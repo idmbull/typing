@@ -10,6 +10,7 @@ import { replayLastWord } from "./audio.js";
 import { EventBus, EVENTS } from "./core/events.js";
 import { displayText } from "./renderer.js";
 
+let currentLoadingPath = null;
 const superPlayer = new SuperAudioPlayer();
 let controller;
 let maxReachedSegment = 0;
@@ -111,37 +112,52 @@ export async function initDictationMode() {
         onReset: resetDictState,
 
         onLoadContent: async (filename) => {
-            // 1. Tải Text trước (nhanh) -> Để loader.js kịp gọi reset() hiển thị Text
+            // 1. Đánh dấu bài đang chọn hiện tại
+            currentLoadingPath = filename;
+
+            // 2. Dừng ngay audio cũ (để tránh đang tải bài mới mà bài cũ vẫn kêu)
+            superPlayer.stop();
+
+            // 3. Tải Text (Nhanh, hiện ngay)
             await loadContent(filename, "dictation");
 
-            // 2. Xử lý Audio (Bất đồng bộ - Không dùng await để chặn UI)
+            // 4. Lấy URL audio từ dữ liệu vừa load
             const audioUrl = Store.getSource().audioUrl;
-            if (audioUrl) {
-                // Thông báo nhẹ là đang tải Audio (tùy chọn UI)
-                const actionLabel = document.getElementById('actionLabel');
-                const originalLabel = actionLabel ? actionLabel.textContent : "Start";
-                if (actionLabel) actionLabel.textContent = "⏳ Audio...";
 
+            // Cập nhật UI trạng thái
+            const actionLabel = document.getElementById('actionLabel');
+            if (actionLabel) actionLabel.textContent = audioUrl ? "⏳ Loading..." : "No Audio";
+
+            if (audioUrl) {
+                // Tải Audio ngầm
                 fetch(audioUrl)
                     .then(res => {
                         if (!res.ok) throw new Error("Audio fetch failed");
                         return res.arrayBuffer();
                     })
                     .then(buf => {
-                        // Tải xong thì nạp vào Player
-                        return superPlayer.load(buf);
-                    })
-                    .then(() => {
-                        console.log("Audio loaded ready");
-                        if (actionLabel) actionLabel.textContent = "Start";
+                        // [QUAN TRỌNG] Kiểm tra xem người dùng có đổi sang bài khác chưa?
+                        // Nếu filename lúc bắt đầu tải KHÁC với currentLoadingPath hiện tại
+                        // nghĩa là người dùng đã bấm sang bài khác rồi -> HỦY BỎ
+                        if (currentLoadingPath !== filename) {
+                            console.log("Audio ignored due to switch:", filename);
+                            return;
+                        }
+
+                        // Nếu vẫn đúng bài, mới nạp vào player
+                        return superPlayer.load(buf).then(() => {
+                            console.log("Audio loaded for:", filename);
+                            if (actionLabel) actionLabel.textContent = "Start";
+                        });
                     })
                     .catch(e => {
                         console.warn("Audio load error:", e);
-                        if (actionLabel) actionLabel.textContent = "No Audio";
+                        if (currentLoadingPath === filename && actionLabel) {
+                            actionLabel.textContent = "Error";
+                        }
                     });
             } else {
-                // Nếu không có audio
-                superPlayer.stop();
+                if (actionLabel) actionLabel.textContent = "Text Only";
             }
         },
 
