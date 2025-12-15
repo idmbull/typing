@@ -9,7 +9,7 @@
 134.940000	136.660000		There are several classes.
 136.660000	139.690000		One very popular one is at the Food Studio.
 
-139.830000	140.882598	WOMAN	OK
+139.830000	140.882598	WOMAN	OK.
 
 140.849416	143.130000	OFFICIAL	They focus on **seasonal**^[theo mùa] **products**^[Sản phẩm (ở đây thường hiểu là nông sản, thực phẩm)],
 143.010000	147.060000		and as well as teaching you how to cook them, they also show you how to choose them.
