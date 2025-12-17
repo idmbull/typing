@@ -108,7 +108,7 @@
 404.220000	405.950000	WOMAN	And what do I need to bring?
 
 406.140000	410.020000	JIM	Well, bring a **bottle of water**^[chai nước], and your phone.
-410.070000	413.950000		You shouldn’t use if while you’re cycling, buy have it with you.
+410.070000	413.950000		You shouldn’t use if while you’re cycling, but have it with you.
 
 413.920000	414.995374	WOMAN	Right.
 
