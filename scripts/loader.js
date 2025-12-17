@@ -178,30 +178,12 @@ function initCustomDropdown(data, mode) {
    MAIN EXPORTED FUNCTIONS
    ========================================================================== */
 
-// export async function loadPlaylist(mode) {
-//     const file = mode === "dictation" ? "dictation.json" : "index.json";
-
-//     try {
-//         const resp = await fetch(file);
-//         const data = await resp.json();
-
-//         // Thay vì render <select>, ta render Custom Dropdown
-//         initCustomDropdown(data, mode);
-
-//         return data;
-//     } catch (e) {
-//         console.error("Playlist Error:", e);
-//         const trigger = document.getElementById('playlistTrigger');
-//         if (trigger) trigger.innerHTML = `<span style="color:red">Error loading list</span>`;
-//         return [];
-//     }
-// }
-
 export async function loadPlaylist(mode) {
     const file = mode === "dictation" ? "dictation.json" : "index.json";
 
     try {
-        const resp = await fetch(file);
+        // const resp = await fetch(file);
+        const resp = await fetch(file, { cache: 'no-cache' });
         const data = await resp.json();
 
         // 1. Khởi tạo UI Dropdown
@@ -233,7 +215,8 @@ export async function loadContent(filename, mode) {
     // Ghép path với filename (filename đã chứa subfolder nếu có, do logic createTreeItem tạo ra)
     const url = `${CDN_BASE}${relativePath}${filename}`;
 
-    const resp = await fetch(url);
+    // const resp = await fetch(url);
+    const resp = await fetch(url, { cache: 'no-cache' });
     if (!resp.ok) throw new Error("File not found");
 
     const raw = await resp.text();
