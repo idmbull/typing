@@ -40,7 +40,7 @@
 
 203.740000	207.450000	ALEX	There were about 20 of us who started at the same time
 207.370000	211.170000		and we were all **around**^[khoảng / xấp xỉ] the same age – I was 18
-211.130000	214.710000		and there was only one person younger than me, how was 17.
+211.130000	214.710000		and there was only one person younger than me, who was 17.
 214.850000	217.600000		**The rest**^[Phần còn lại (Khi có mạo từ "The" đi trước, rest thường mang nghĩa là những người còn lại hoặc những thứ còn lại.)] were between 18 and 20.
 217.750000	219.180000		I made some good friends.
 
@@ -54,12 +54,12 @@
 234.570000	238.648628		I know you get **a lower**^[a lower … than … = thấp hơn so với …] **minimum wage**^[lương tối thiểu] than **regular employees**^[nhân viên chính thức].
 
 238.637766	240.566062	ALEX	That’s right – which isn’t great.
-240.580000	243.790000		Buy you get the same number of days’ holiday as everyone else.
+240.580000	243.790000		But you get the same number of days’ holiday as everyone else.
 243.800000	248.470000		And the pay **goes up**^[increases] **massively**^[rất nhiều (Dùng khi nói về sự thay đổi, tăng trưởng hoặc tác động có quy mô lớn.)] if they offer you a job at the end of the training period.
 
 248.400000	251.400000	MARTHA	Yeah, but I’m not doing it for the money
 251.500000	254.740000		– it’s the experience I think will be really useful.
-254.880000	259.030000		Everyone says by the end of the year you **gain**^[đạt được, có thêm (tích lũy dần)] so much **confidence**^[sự tự tin.
+254.880000	259.030000		Everyone says by the end of the year you **gain**^[đạt được, có thêm (tích lũy dần)] so much **confidence**^[sự tự tin].
 
 258.990000	261.980000	ALEX	You’re right. That’s the most useful part about it.
 262.300000	266.977969		There’s a lot of **variety**^[sự đa dạng] too. You’re **given**^[được giao / được cho] lots of different things to do.
